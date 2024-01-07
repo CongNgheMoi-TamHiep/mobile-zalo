@@ -6,6 +6,8 @@ import { Ionicons } from "@expo/vector-icons";
 import Login from "./component/Login";
 import Home from "./component/Home";
 import Signup from "./component/Signup";
+import MyTabs from "./component/BottomTab";
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -13,7 +15,7 @@ export default function App() {
     <NavigationContainer>
       <StatusBar style="auto" translucent={true} backgroundColor="transparent" />
 
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName="MyTabs">
       <Stack.Screen
           name="Home"
           component={Home}
@@ -34,6 +36,11 @@ export default function App() {
             backgroundColor: '#00aaff',
           },
            }}
+        />
+        <Stack.Screen
+          name="MyTabs"
+          component={MyTabs}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
