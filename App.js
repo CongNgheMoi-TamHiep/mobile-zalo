@@ -7,6 +7,8 @@ import Login from "./component/Login";
 import Home from "./component/Home";
 import Signup from "./component/Signup";
 import SignupSDT from "./component/SignupSDT";
+import MyTabs from "./component/BottomTab";
+
 const Stack = createNativeStackNavigator();
 import SignupAuth from "./component/SignupAuth";
 import TestDK from "./component/TestDK";
@@ -79,6 +81,11 @@ export default function App() {
               backgroundColor: "#00aaff",
             },
           }}
+        />
+        <Stack.Screen
+          name="MyTabs"
+          component={MyTabs}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </NavigationContainer>
