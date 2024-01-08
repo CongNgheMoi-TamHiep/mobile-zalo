@@ -22,7 +22,7 @@ export default function App({navigation}) {
   };
   function handelTaoTen() {
     if(name.length>=2 && name.length<=40){
-        // navigation.navigate('Signup',{name:name})
+        navigation.navigate('SignupSDT',{name:name})
     }
     else{
         setErorName('Tên quá ngắn. Vui lòng nhập tên dài hơn 2 kí tự và không quá 40 kí tự')
