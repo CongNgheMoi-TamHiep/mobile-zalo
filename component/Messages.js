@@ -8,23 +8,46 @@ const data = [
         username: "Nguyen Tuan Hiep",
         image: 'https://1.bp.blogspot.com/-kL3SubeHWUc/VD_xwbbpKkI/AAAAAAAAQFs/eh8c2lFdsjc/s1600/Anime-image-anime-36250619-1024-768.jpg',
         time: "21 minutes",
-        latestMessage: "alo alo"
-
+        latestMessage: "alo alo",
+        conversationId: 1,  // ID của cuộc trò chuyện
+        messages: [
+            { _id: 1, text: 'Hello!', createdAt: new Date(), user: { _id: 2 } },
+            { _id: 2, text: 'Hi there!', createdAt: new Date(), user: { _id: 1 } }
+            // Thêm tin nhắn khác nếu cần
+        ]
     },
     {
         id: 2,
         username: "Nguyen Van Long",
         image: 'https://i.pinimg.com/474x/d6/7a/14/d67a14cdca5e920039d2a8acc6de3892.jpg',
         time: "1 hours",
-        latestMessage: "anh yeu em"
+        latestMessage: "anh yeu em",
+        conversationId: 2,
+        messages: [
+            { _id: 3, text: 'Hi!', createdAt: new Date(), user: { _id: 1 } },
+            { _id: 4, text: 'Em cũng yêu anh!', createdAt: new Date(), user: { _id: 2 } }
+            // Thêm tin nhắn khác nếu cần
+        ]
     }
-]
+];
 
-export default function Chat() {
+export default function Chat({ navigation }) {
     // render lên màn hình các đoạn chat của user
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.viewOfFlatlist}
+            // onPress={() => navigation.navigate("Conversations", {
+            //     userId: 1,  // ID của người dùng hiện tại (hoặc có thể đăng nhập)
+            //     username: item.username,
+            //     image: item.image,
+            //     conversationId: item.conversationId,
+            //     messages: item.messages
+            // })}
+            onPress={() => {
+                navigation.navigate("Conversations", {
+                    conversationData: item, // Chuyển toàn bộ thông tin cuộc trò chuyện
+                });
+            }}
         >
             <View style={{ width: '20%', height: 70, alignItems: 'center' }}>
                 <Image
