@@ -8,6 +8,7 @@ import Home from "./component/Home";
 import Signup from "./component/Signup";
 import SignupSDT from "./component/SignupSDT";
 import MyTabs from "./component/BottomTab";
+import Conversations from "./component/Conversations";
 
 const Stack = createNativeStackNavigator();
 import SignupAuth from "./component/SignupAuth";
@@ -60,7 +61,7 @@ export default function App() {
             },
           }}
         />
-          <Stack.Screen
+        <Stack.Screen
           name="SignupAuth"
           component={SignupAuth}
           options={{
@@ -86,6 +87,20 @@ export default function App() {
           name="MyTabs"
           component={MyTabs}
           options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Conversations"
+          component={Conversations}
+          options={{
+            headerShown: true,
+            headerStyle:{
+              backgroundColor: '#0095FB'
+            },
+            headerTitleStyle:{
+              color: '#fff'
+            },
+            headerTintColor: '#fff'
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
