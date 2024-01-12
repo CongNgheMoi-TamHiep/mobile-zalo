@@ -9,8 +9,10 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import CountryPicker from "react-native-country-picker-modal";
 import PhoneNumber from "libphonenumber-js";
-export default function App({navigation,route}) {
+export default function App({ navigation, route }) {
   const [SDT, setSDT] = useState("");
+  const [password, setPassword] = useState("");
+  const [isSecureEntry, setIsSecureEntry] = useState(true);
   const [isChecked, setIsChecked] = useState(false);
   const [isChecked2, setIsChecked2] = useState(false);
   const [isNext, setIsNext] = useState(false);
@@ -18,7 +20,6 @@ export default function App({navigation,route}) {
     setSDT("");
     setErrorSDT("");
   };
-
   const handleCheckbox = () => {
     setIsChecked(!isChecked);
   };
@@ -26,31 +27,46 @@ export default function App({navigation,route}) {
     setIsChecked2(!isChecked2);
   };
   useEffect(() => {
-    if (isChecked && isChecked2 && SDT.length != 0) {
+    if (isChecked && password.length!=0 && isChecked2 && SDT.length != 0) {
       setIsNext(true);
     } else {
       setIsNext(false);
     }
-  }, [isChecked, isChecked2, SDT.length]);
+  }, [isChecked, isChecked2, SDT.length, password]);
   const [countryCode, setCountryCode] = useState("VN");
   const [callingCode, setCallingCode] = useState("+84");
   const handleCountryChange = (country) => {
-    setCallingCode(country.callingCode);
     setCountryCode(country.cca2);
+    setCallingCode(country.callingCode);
+
     // Thực hiện bất kỳ điều gì khác khi chọn quốc gia
   };
   const [errorSDT, setErrorSDT] = useState("");
+  const [errorPassword, setErrorPassword] = useState("");
   function handelTaoSDT() {
-      const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
-      if (phoneNumber) {
+    const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
+    if (phoneNumber) {
+      if (password.length > 6) {
         setErrorSDT("");
-        console.log("Số điện thoại hợp lệ");
-        navigation.navigate('SignupAuth',{SDT:SDT,callingCode:callingCode,name:route.params.name})
+        setErrorPassword("");
+        navigation.navigate("SignupAuth", {
+          SDT: SDT,
+          callingCode: callingCode,
+          name: route.params.name,
+          password: password,
+        });
       } else {
-        setErrorSDT("Số điện thoại không hợp lệ cho quốc gia đã chọn");
+        setErrorSDT("");
+        setErrorPassword("Mật khẩu phải có ít nhất 6 ký tự");
       }
+    } else {
+      setErrorPassword("");
+      setErrorSDT("Số điện thoại không hợp lệ cho quốc gia đã chọn");
+    }
   }
- 
+  // useEffect(() => {
+  //   console.log(countryCode);
+  // }, [countryCode]);
   return (
     <View style={styles.container}>
       <View style={styles.ViewTop}>
@@ -68,12 +84,12 @@ export default function App({navigation,route}) {
           }}
         >
           <CountryPicker
-          containerButtonStyle={{ marginTop: 15 }}
+            containerButtonStyle={{ marginTop: 15 }}
             withCallingCode
             withFilter
             withFlag
-            countryCode={countryCode}
             onSelect={handleCountryChange}
+            countryCode={countryCode}
           />
           {/* <Text style={{marginTop:10,fontSize:16  }}> */}
           {/* {'(+'}{callingCode}{") "} */}
@@ -97,8 +113,38 @@ export default function App({navigation,route}) {
             </TouchableOpacity>
           )}
         </View>
+        <View style={{  width: "100%",
+            paddingRight: 20,
+            flexDirection: "row",
+            alignItems: "center",
+            borderBottomWidth: 1,
+            borderBottomColor: "blue",}}>
+          <TextInput
+            style={styles.input}
+            placeholder="Nhập mật khẩu"
+            autoCapitalize="none"
+            autoCorrect={false}
+            secureTextEntry={isSecureEntry}
+            textContentType="password"
+            value={password}
+            onChangeText={(text) => setPassword(text)}
+          />
+          
+            <TouchableOpacity
+            onPress={() => {
+              setIsSecureEntry(!isSecureEntry);
+            }}
+          >
+            <MaterialIcons
+              name={isSecureEntry ? "visibility-off" : "visibility"}
+              size={24}
+              color="black"
+            />
+          </TouchableOpacity>
+        </View>
         <Text style={{ fontSize: 16, color: "red", marginTop: 15 }}>
           {errorSDT}
+          {errorPassword}
         </Text>
         <View style={styles.checkboxContainer}>
           <TouchableOpacity onPress={handleCheckbox}>
