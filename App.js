@@ -50,9 +50,6 @@ function ChatStack() {
   );
 }
 
-
-      <Stack.Navigator>
-        <Stack.Screen
 function AuthStack() {
   return (
     <Stack.Navigator >
@@ -160,6 +157,3 @@ export default function App() {
     </AuthenticatedUserProvider>
   );
 }
-
-
-
