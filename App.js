@@ -11,7 +11,9 @@ import Home from "./component/Home";
 import Signup from "./component/Signup";
 import SignupSDT from "./component/SignupSDT";
 import MyTabs from "./component/BottomTab";
-import LoginAuth from "./component/LoginAuth";
+import Conversations from "./component/Conversations";
+
+const Stack = createNativeStackNavigator();
 import SignupAuth from "./component/SignupAuth";
 import TestDK from "./component/TestDK";
 
@@ -96,7 +98,7 @@ function AuthStack() {
             },
           }}
         />
-          <Stack.Screen
+        <Stack.Screen
           name="SignupAuth"
           component={SignupAuth}
           options={{
@@ -118,6 +120,7 @@ function AuthStack() {
             },
           }}
         />
+
     </Stack.Navigator>
   );
 }
@@ -148,6 +151,7 @@ if (isLoading) {
 return (
     <NavigationContainer>
       {user ? <ChatStack /> : <AuthStack />}
+
     </NavigationContainer>
   );
 }
