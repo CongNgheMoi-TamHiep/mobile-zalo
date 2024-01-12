@@ -50,6 +50,9 @@ function ChatStack() {
   );
 }
 
+
+      <Stack.Navigator>
+        <Stack.Screen
 function AuthStack() {
   return (
     <Stack.Navigator >
