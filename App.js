@@ -22,7 +22,7 @@ export default function App() {
         backgroundColor="transparent"
       />
 
-      <Stack.Navigator>
+      <Stack.Navigator initialRouteName="MyTabs">
         <Stack.Screen
           name="Home"
           component={Home}
