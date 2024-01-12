@@ -8,19 +8,31 @@ import {
 } from "react-native";
 import React, { useState, useEffect } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
-
-export default function App() {
+import { firebaseConfig } from "../config/firebase.js";
+import firebase from "firebase/compat/app";
+export default function App({navigation}) {
   const [sdt, setsdt] = useState("");
   const [password, setPassword] = useState("");
   const [isFocusedSdt, setIsFocusedSdt] = useState(false);
   const [isFocusedPassword, setIsFocusedPassword] = useState(false);
   const [isSecureEntry, setIsSecureEntry] = useState(true);
   const [isFieldsFilled, setIsFieldsFilled] = useState(false);
-
+   const [errorMessage, setErrorMessage] = useState('');
   useEffect(() => {
     setIsFieldsFilled(sdt !== "" && password !== "");
   }, [sdt, password]);
-
+  function Login() {
+    firebase
+      .auth()
+      .signInWithEmailAndPassword(`${sdt}@gmail.com`, password)
+      .then((userCredential) => {
+        setErrorMessage('');
+        navigation.navigate("MyTabs");
+      })
+      .catch((error) => {
+       setErrorMessage('Tài khoản hoặc mật khẩu không đúng');
+      });
+  }
   return (
     <View style={styles.container}>
       <View style={styles.ViewTop}>
@@ -75,14 +87,17 @@ export default function App() {
           </TouchableOpacity>
         </View>
       </View>
-      <TouchableOpacity style={styles.button} >
+      <Text style={{fontSize:18,color:'red',marginTop:35,marginLeft:17}}>
+        {errorMessage}
+      </Text>
+      <TouchableOpacity style={styles.button}>
         <Text
           style={{
             fontWeight: "bold",
-            color: "blue" ,
+            color: "#006AF5",
             fontSize: 18,
             paddingLeft: 17,
-            marginTop: 1
+            marginTop: 18,
           }}
         >
           {" "}
@@ -94,8 +109,8 @@ export default function App() {
           <Text
             style={{
               fontWeight: "bold",
-              color: "gray",
-              fontSize: 18,
+              color: "#767A7F",
+              fontSize: 16,
               paddingLeft: 17,
               marginTop: 10,
             }}
@@ -105,11 +120,14 @@ export default function App() {
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
+          onPress={() => {
+            Login();
+          }}
           style={{
             borderRadius: 100,
             width: 50,
             height: 50,
-            backgroundColor: isFieldsFilled ? "blue" : "gray",
+            backgroundColor: isFieldsFilled ? "#006AF5" : "gray",
             justifyContent: "center",
             alignItems: "center",
           }}
@@ -130,13 +148,13 @@ const styles = StyleSheet.create({
   ViewTop: {
     width: "100%",
     height: 50,
-    backgroundColor: "gray",
+    backgroundColor: "#E9EBED",
     justifyContent: "center",
     alignItems: "center",
   },
   ViewInput: {
     width: "100%",
-    height: 130,
+    height: 70,
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
@@ -160,5 +178,4 @@ const styles = StyleSheet.create({
     bottom: 20,
     position: "absolute",
   },
- 
 });

@@ -6,7 +6,7 @@ export default function SwiperComponent({navigation}) {
     const [laguage,setLaguage] = useState('vn')
   return (
     <View style={styles.container}>
-        <Text style={{color:'blue',fontSize:33,fontWeight:700,marginVertical: 10,}}>
+        <Text style={{color:'#006AF5',fontSize:33,fontWeight:700,marginVertical: 10,}}>
             Zalo
         </Text>
         <Image source={require('../assets/backgroundHome.jpg')} style={styles.backImage} />
@@ -49,10 +49,10 @@ export default function SwiperComponent({navigation}) {
         </TouchableOpacity>
         <View style={styles.laguage}>
         <TouchableOpacity onPress={()=>setLaguage('vn')}>
-        <Text style={{color: laguage == 'vn'?'black':'gray',textDecorationLine:  laguage == 'vn'?'underline':null ,fontSize:20,fontWeight:500}}>Tiếng Việt</Text>
+        <Text style={{color: laguage == 'vn'?'black':'#767A7F',textDecorationLine:  laguage == 'vn'?'underline':null ,fontSize:20,fontWeight:500}}>Tiếng Việt</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={()=>setLaguage('en')}>
-        <Text style={{color:laguage == 'en'?'black':'gray',textDecorationLine:  laguage == 'en'?'underline':null ,fontSize:20,fontWeight:500}}>English</Text>
+        <Text style={{color:laguage == 'en'?'black':'#767A7F',textDecorationLine:  laguage == 'en'?'underline':null ,fontSize:20,fontWeight:500}}>English</Text>
         </TouchableOpacity>
         </View>
     </View>
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   ButtonLogin:{
-    backgroundColor:'blue',
+    backgroundColor:'#52A0FF',
     width:'59%',
     height:50,
     justifyContent:'center',
@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     marginTop:20,
   },
   ButtonSignup:{
-    backgroundColor:'gray',
+    backgroundColor:'#F4F5F6',
     width:'59%',
     height:50,
     justifyContent:'center',
