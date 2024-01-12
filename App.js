@@ -13,7 +13,6 @@ import SignupSDT from "./component/SignupSDT";
 import MyTabs from "./component/BottomTab";
 import Conversations from "./component/Conversations";
 
-const Stack = createNativeStackNavigator();
 import SignupAuth from "./component/SignupAuth";
 import TestDK from "./component/TestDK";
 
@@ -42,6 +41,11 @@ function ChatStack() {
           component={MyTabs}
           options={{ headerShown: false }}
         />
+      <Stack.Screen 
+      name="Conversations"
+      component={Conversations}
+      options={{ headerShown: true }}
+      />
     </Stack.Navigator>
   );
 }
@@ -65,17 +69,7 @@ function AuthStack() {
             },
           }}
         />
-        <Stack.Screen
-          name="LoginAuth"
-          component={LoginAuth}
-          options={{
-            headerShown: true,
-            title: "Nhập mã xác thực",
-            headerStyle: {
-              backgroundColor: "#00aaff",
-            },
-          }}
-        />
+      
         <Stack.Screen
           name="Signup"
           component={Signup}
