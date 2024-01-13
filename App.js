@@ -31,11 +31,16 @@ return (
       {children}
     </AuthenticatedUserContext.Provider>
   );
-};
+};  
 
 function ChatStack() {
   return (
-    <Stack.Navigator defaultScreenOptions={MyTabs}>
+    <Stack.Navigator >
+      <Stack.Screen
+          name="TestDK"
+          component={TestDK}
+          options={{ headerShown: false }}
+        />
       <Stack.Screen
           name="MyTabs"
           component={MyTabs}

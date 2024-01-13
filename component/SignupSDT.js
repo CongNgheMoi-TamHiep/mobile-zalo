@@ -38,9 +38,11 @@ export default function App({ navigation, route }) {
   const handleCountryChange = (country) => {
     setCountryCode(country.cca2);
     setCallingCode(country.callingCode);
+    
 
     // Thực hiện bất kỳ điều gì khác khi chọn quốc gia
   };
+  console.log(countryCode);
   const [errorSDT, setErrorSDT] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
   function handelTaoSDT() {

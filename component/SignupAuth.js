@@ -16,7 +16,7 @@ export default function App({ navigation, route }) {
   const [verificationCode, setVerificationCode] = useState("");
   const [timer, setTimer] = useState(60);
   const [isEnterCode, setIsEnterCode] = useState(false);
-
+  console.log(route.params.SDT);
   useEffect(() => {
     let intervalId;
     if (timer > 0) {
