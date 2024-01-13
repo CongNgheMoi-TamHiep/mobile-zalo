@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, Image, FlatList, TouchableOpacity } from "react-native";
+import { Icon } from 'zmp-ui'
 
 //  dữ liệu dùng để test
 const data = [

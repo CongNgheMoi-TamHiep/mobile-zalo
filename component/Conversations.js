@@ -1,9 +1,10 @@
-import React, { useState, useLayoutEffect } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity } from "react-native";
+import React, { useState, useLayoutEffect, useRef } from "react";
+import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { GiftedChat, Send, Bubble } from "react-native-gifted-chat";
 import { InputToolbar } from "react-native-gifted-chat";
 import * as ImagePicker from 'expo-image-picker';
-import { Video, Audio } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
+
 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { AntDesign, SimpleLineIcons, Ionicons, MaterialIcons, Entypo, Octicons } from '@expo/vector-icons';
@@ -14,6 +15,30 @@ export default function Conversations({ route, navigation }) {
     const [isTyping, setIsTyping] = useState(false);
     // hiệu ứng dấu nháy trong phần tin nhắn
     const [isFocused, setIsFocused] = useState(false);
+
+    // video
+    const videoRef = useRef(null);
+    // const [isPlaying, setIsPlaying] = useState(false);
+    // const [status, setStatus] = useState({});
+
+    // cập nhật trạng thái phát lại của video
+    const onPlaybackStatusUpdate = (status) => {
+        if (!status.isLoaded) {
+            // xử lý nếu cần khi video chưa load
+        } else {
+            // setIsPlaying(status.isPlaying);
+
+            if (status.didJustFinish) {
+                // Nếu video vừa chạy xong, đặt lại vị trí phát lại về đầu
+                videoRef.current.setPositionAsync(0);
+            }
+        }
+    };
+
+
+
+
+
 
     const onInputTextChanged = (text) => {
         setIsTyping(text.length > 0);
@@ -28,7 +53,6 @@ export default function Conversations({ route, navigation }) {
     };
 
     // xử lí gửi ảnh
-
     const onSendMedia = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -60,9 +84,6 @@ export default function Conversations({ route, navigation }) {
             onSend(selectedMedia);
         }
     };
-
-
-
 
 
     // dữ liệu giả
@@ -100,6 +121,9 @@ export default function Conversations({ route, navigation }) {
 
         navigation.setOptions({
             title: "", // Đổi tiêu đề
+            headerStyle: {
+                backgroundColor: '#0C8AFF', // Thay đổi màu nền của header
+            },
             headerLeft: () => (
                 <View style={{ width: 250, flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
                     <AntDesign name="left" size={24} color="white" onPress={() => navigation.goBack()} />
@@ -159,28 +183,24 @@ export default function Conversations({ route, navigation }) {
     // gửi video
     const renderMessageVideo = (props) => {
         console.log("videoprop:", props.currentMessage.video);
-        return <View style={{ position: 'relative', height: 280, width: 250 }}>
-
-            < Video
-                style={{
-                    position: 'absolute',
-                    left: 0,
-                    top: 0,
-                    height: 300,
-                    width: 250,
-                    borderRadius: 20,
-                }}
-                shouldPlay={true}
-                rate={1.0}
-                resizeMode="cover"
-                height={400}
-                width={250}
-                muted={true}
-                source={{ uri: props.currentMessage.video }}
-                allowsExternalPlayback={false}
-            />
-        </View>
+        return (
+            <TouchableOpacity
+                style={{ position: 'relative', height: 280, width: 250 }}
+            >
+                <Video
+                    ref={videoRef}
+                    style={styles.video}
+                    source={{
+                        uri: props.currentMessage.video,
+                    }}
+                    useNativeControls
+                    resizeMode={ResizeMode.CONTAIN}
+                    onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+                />
+            </TouchableOpacity>
+        );
     }
+
 
     // chỉnh icon gửi tin nhắn
     const renderSend = (props) => {
@@ -235,7 +255,7 @@ export default function Conversations({ route, navigation }) {
         );
     };
 
-    // cái này dùng để custom bóng chat nhưng mà chưa áp dụng được (có áp dụng nhưng chưa thấy tác dụng!)
+    // cái này dùng để custom bóng chat
 
     const renderBubble = (props) => {
         const { user, createdAt, text, image, video } = props.currentMessage;
@@ -334,20 +354,20 @@ export default function Conversations({ route, navigation }) {
         <GiftedChat
             messages={messages}
             onSend={newMessages => onSend(newMessages)}
+            onInputTextChanged={onInputTextChanged}
+            onFocus={onFocus}
+            onBlur={onBlur}
             placeholder="Messages"
             user={{
                 _id: 2,
             }}
-            renderBubble={renderBubble} // hiện tại thì chưa thấy tác dụng :))
+            timeTextStyle={{ left: { color: '#95999A' }, right: { color: '#F0F0F0' } }} // Màu của thời gian
+            renderBubble={renderBubble} // custom màu bóng chat
             renderSend={renderSend} // custom icon gửi thay vì chữ SEND
             renderMessageVideo={renderMessageVideo} // dùng để gửi video
             renderUsernameOnMessage={true} // hiện tên người gửi bên dưới nội dung
-            timeTextStyle={{ left: { color: '#95999A' }, right: { color: '#F0F0F0' } }} // Màu của thời gian
-            renderInputToolbar={renderInputToolBar}
-            renderActions={renderAction}
-            onInputTextChanged={onInputTextChanged}
-            onFocus={onFocus}
-            onBlur={onBlur}
+            renderInputToolbar={renderInputToolBar} // custom thanh bar của tin nhắn
+            renderActions={renderAction} // chỉnh icon kế bên ô nhập tin nhắn
         />
     )
 }
@@ -358,4 +378,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         alignItems: 'center'
     },
+    video: {
+        position: 'absolute',
+        left: 0,
+        top: 0,
+        height: 300,
+        width: 250,
+        borderRadius: 20,
+    }
 });

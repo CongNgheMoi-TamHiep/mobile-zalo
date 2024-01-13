@@ -68,6 +68,7 @@ export default function MyTabs() {
                     },
                     tabBarIcon: ({ color, size }) => (
                         <AntDesign name="message1" size={size} color={color} />
+                    
                     ),
                 }}
             />
