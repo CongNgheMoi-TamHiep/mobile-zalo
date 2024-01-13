@@ -24,6 +24,7 @@
     "expo-status-bar": "~1.6.0",
     "firebase": "^10.7.1",
     "libphonenumber-js": "^1.10.53",
+    "lottie-react-native": "5.1.6",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.72.6",
@@ -43,7 +44,7 @@
     "react-native-webview": "^13.6.4",
     "react-phone-number-input": "^3.3.8",
     "swiper": "^11.0.5",
-    "lottie-react-native": "5.1.6"
+    "zmp-ui": "^1.8.5"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0"
