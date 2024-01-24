@@ -12,7 +12,7 @@ import Signup from "./component/Signup";
 import SignupSDT from "./component/SignupSDT";
 import MyTabs from "./component/BottomTab";
 import Conversations from "./component/Conversations";
-
+import Contact from "./component/Contacts";
 import SignupAuth from "./component/SignupAuth";
 import TestDK from "./component/TestDK";
 
@@ -58,6 +58,11 @@ function ChatStack() {
 function AuthStack() {
   return (
     <Stack.Navigator >
+       <Stack.Screen
+        name="MyTabs"
+        component={MyTabs}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
         name="Home"
         component={Home}
