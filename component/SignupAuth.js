@@ -11,6 +11,8 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
 import { firebaseConfig } from "../config/firebase.js";
 import firebase from "firebase/compat/app";
+import axiosPrivate from '../api/axiosPrivate';
+import {REACT_APP_API_URL} from '@env'
 
 export default function App({ navigation, route }) {
   const [verificationCode, setVerificationCode] = useState("");
@@ -95,24 +97,38 @@ export default function App({ navigation, route }) {
       verificationCode
     );
 
-    firebase
-      .auth()
-      .signInWithCredential(credential)
-      .then((result) => {
-        linkEmailCredential();
-        fetch("http://192.168.1.221:3000/api/user/register", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(dataUser),
-        }).then((response) => console.log("111123  " + response.json()));
+    // firebase
+    //   .auth()
+    //   .signInWithCredential(credential)
+    //   .then((result) => {
+    //     linkEmailCredential();
+    //     fetch("http://192.168.1.221:3000/api/user/register", {
+    //       method: "POST",
+    //       headers: {
+    //         "Content-Type": "application/json",
+    //       },
+    //       body: JSON.stringify(dataUser),
+    //     }).then((response) => console.log("111123  " + response.json()));
+    //     navigation.navigate("TestDK", { name: name });
+    //   })
+    //   .catch((err) => {
+    //     // console.log(err);
+    //     setErrorCode("Mã OTP không đúng, vui lòng kiểm tra lại.");
+    //   });
+
+    firebase.auth().signInWithCredential(credential).then(async (result) => {
+      linkEmailCredential();
+      try {
+        const response = await axiosPrivate(`${REACT_APP_API_URL}/auth/register`, dataUser);
+        console.log("111123  " + (await response.json()));
         navigation.navigate("TestDK", { name: name });
-      })
-      .catch((err) => {
-        // console.log(err);
+      } catch (err) {
         setErrorCode("Mã OTP không đúng, vui lòng kiểm tra lại.");
-      });
+      }
+    }).catch((err) => {
+      // console.log(err);
+      setErrorCode("Mã OTP không đúng, vui lòng kiểm tra lại.");
+    });
   };
   const [errorCode, setErrorCode] = useState("");
   return (
