@@ -66,16 +66,12 @@ export default function App({ navigation, route }) {
   const name = route.params.name;
   const password = route.params.password;
   const number = route.params.SDT;
-  const dataUser = {
-    name: name,
-    number: number,
-    password: password,
-  };
+  
 
   const linkEmailCredential = () => {
     const emailCredential = firebase.auth.EmailAuthProvider.credential(
-      dataUser.number + "@gmail.com",
-      dataUser.password
+      number + "@gmail.com",
+      password
     );
 
     firebase
@@ -117,11 +113,21 @@ export default function App({ navigation, route }) {
     //   });
 
     firebase.auth().signInWithCredential(credential).then(async (result) => {
-      linkEmailCredential();
+      await linkEmailCredential();
       try {
-        const response = await axiosPrivate(`${REACT_APP_API_URL}/auth/register`, dataUser);
-        console.log("111123  " + (await response.json()));
-        navigation.navigate("TestDK", { name: name });
+        const dataUser = {
+          name: name,
+          number: number,
+          _id: result.user.uid,
+          avatar: "https://images.pexels.com/photos/14940646/pexels-photo-14940646.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+        };
+        
+        const response = await axiosPrivate.post('/auth/register', dataUser);
+        await axiosPrivate.post('/userConversations', {
+          userId: result.user.uid, 
+          conversations: [],
+        }); 
+        // navigation.navigate("TestDK", { name: name });
       } catch (err) {
         setErrorCode("Mã OTP không đúng, vui lòng kiểm tra lại.");
       }
