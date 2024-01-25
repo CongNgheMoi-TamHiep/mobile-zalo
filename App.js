@@ -4,7 +4,7 @@ import React, { useState, createContext, useContext, useEffect } from 'react';
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 
 import Login from "./component/Login";
 import Home from "./component/Home";
@@ -19,6 +19,7 @@ import TestDK from "./component/TestDK";
 const Stack = createNativeStackNavigator();
 const AuthenticatedUserContext = createContext({});
 import { getAuth } from 'firebase/auth';
+import axiosPrivate from "./api/axiosPrivate";
 
 // ...
 
@@ -36,16 +37,17 @@ const AuthenticatedUserProvider = ({ children }) => {
 function ChatStack() {
   return (
     <Stack.Navigator >
+       <Stack.Screen
+        name="MyTabs"
+        component={MyTabs}
+        options={{ headerShown: false }}
+      />
       <Stack.Screen
           name="TestDK"
           component={TestDK}
           options={{ headerShown: false }}
         />
-      <Stack.Screen
-        name="MyTabs"
-        component={MyTabs}
-        options={{ headerShown: false }}
-      />
+     
       <Stack.Screen
         name="Conversations"
         component={Conversations}
@@ -58,11 +60,11 @@ function ChatStack() {
 function AuthStack() {
   return (
     <Stack.Navigator >
-       <Stack.Screen
+       {/* <Stack.Screen
         name="MyTabs"
         component={MyTabs}
         options={{ headerShown: false }}
-      />
+      /> */}
       <Stack.Screen
         name="Home"
         component={Home}
@@ -162,6 +164,12 @@ function RootNavigator() {
 }
 
 export default function App() {
+  // useEffect(() => {
+  //   (async () => { 
+  //     await signOut(auth);
+  //     console.log(auth.currentUser);
+  //   })(); 
+  // }, [])
   return (
     <AuthenticatedUserProvider>
       <RootNavigator />
