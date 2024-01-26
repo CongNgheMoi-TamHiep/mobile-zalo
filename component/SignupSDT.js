@@ -37,22 +37,28 @@ export default function App({ navigation, route }) {
   const [callingCode, setCallingCode] = useState("+84");
   const handleCountryChange = (country) => {
     setCountryCode(country.cca2);
-    setCallingCode(country.callingCode);
+    setCallingCode("+" + country.callingCode.join(""));
     
 
     // Thực hiện bất kỳ điều gì khác khi chọn quốc gia
   };
-  console.log(countryCode);
+  console.log(callingCode);
   const [errorSDT, setErrorSDT] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
   function handelTaoSDT() {
+    console.log("countryCode"+countryCode);
+
     const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
     if (phoneNumber) {
-      if (password.length > 6) {
+      const formattedSDT = SDT.replace(/^0+/, '');
+      //loại bỏ số 0 ở đầu số điện thoại
+      if (password.length >= 6) {
+        
+        
         setErrorSDT("");
         setErrorPassword("");
         navigation.navigate("SignupAuth", {
-          SDT: SDT,
+          SDT: formattedSDT,
           callingCode: callingCode,
           name: route.params.name,
           password: password,
