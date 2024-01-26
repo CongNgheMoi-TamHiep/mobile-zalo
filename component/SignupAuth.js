@@ -49,6 +49,7 @@ export default function App({ navigation, route }) {
 
   const senVerification = () => {
     let phoneProvider = new firebase.auth.PhoneAuthProvider();
+    console.log(phoneNumber);
     phoneProvider
       .verifyPhoneNumber(phoneNumber, recaptchaVerifier.current)
       .then((verificationId) => {
@@ -70,7 +71,7 @@ export default function App({ navigation, route }) {
 
   const linkEmailCredential = () => {
     const emailCredential = firebase.auth.EmailAuthProvider.credential(
-      number + "@gmail.com",
+      phoneNumber + "@gmail.com",
       password
     );
 
