@@ -5,22 +5,32 @@ import Contacts from "./Contacts";
 import Discovery from "./Discovery";
 import Timeline from "./Timeline";
 import User from "./User";
-import { View, TextInput } from "react-native";
+import { View, TextInput,TouchableOpacity,Text } from "react-native";
 
 const Tab = createBottomTabNavigator();
 
-export default function MyTabs() {
+export default function MyTabs({ navigation }) {
     // Define your custom header components
     const renderSearchIcon = () => (
-        <View style={{ flexDirection: 'row', height: 30 }}>
+        <TouchableOpacity
+        onPress={() => {
+            navigation.navigate('Search')
+         }}
+
+         style={{ flexDirection: 'row', height: 30,alignItems:'center' }}>
             <Feather name="search" size={28} color="white" />
-            <View style={{ marginLeft: 20 }} />
-            <TextInput
+            {/* <TextInput
+                 onPress={() => {
+                    navigation.navigate('Search')
+                 }}
                 placeholder="search"
                 placeholderTextColor={"white"}
-                style={{ fontWeight: 'bold', fontSize: 18, width: 215, height: 28, color: 'white' }}
-            />
-        </View>
+                style={{marginLeft: 20, fontWeight: 'bold', fontSize: 18, width: 215, height: 28, color: 'white' }}
+            /> */}
+            <Text style={{color:'#B9BDC1',marginLeft:20,fontSize:18,fontWeight:500}}>
+                Tìm kiếm
+            </Text>
+        </TouchableOpacity>
 
 
     );
