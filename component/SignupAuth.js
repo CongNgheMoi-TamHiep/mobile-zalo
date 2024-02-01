@@ -118,7 +118,7 @@ export default function App({ navigation, route }) {
       try {
         const dataUser = {
           name: name,
-          number: number,
+          number:phoneNumber,
           _id: result.user.uid,
           avatar: "https://images.pexels.com/photos/14940646/pexels-photo-14940646.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
         };
