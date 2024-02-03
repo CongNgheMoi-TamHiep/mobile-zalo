@@ -10,28 +10,48 @@ import React, { useState, useEffect } from "react";
 import { MaterialIcons } from "@expo/vector-icons";
 import { firebaseConfig } from "../config/firebase.js";
 import firebase from "firebase/compat/app";
-export default function App({navigation}) {
+import CountryPicker from "react-native-country-picker-modal";
+import PhoneNumber from "libphonenumber-js";
+export default function App({ navigation }) {
   const [sdt, setsdt] = useState("");
   const [password, setPassword] = useState("");
   const [isFocusedSdt, setIsFocusedSdt] = useState(false);
   const [isFocusedPassword, setIsFocusedPassword] = useState(false);
   const [isSecureEntry, setIsSecureEntry] = useState(true);
   const [isFieldsFilled, setIsFieldsFilled] = useState(false);
-   const [errorMessage, setErrorMessage] = useState('');
+  const [errorMessage, setErrorMessage] = useState("");
   useEffect(() => {
     setIsFieldsFilled(sdt !== "" && password !== "");
   }, [sdt, password]);
+  const [countryCode, setCountryCode] = useState("VN");
+  const [callingCode, setCallingCode] = useState("+84");
+  const handleCountryChange = (country) => {
+    setCountryCode(country.cca2);
+    setCallingCode("+" + country.callingCode.join(""));
+
+    // Thực hiện bất kỳ điều gì khác khi chọn quốc gia
+  };
   function Login() {
-    firebase
-      .auth()
-      .signInWithEmailAndPassword(`${sdt}@gmail.com`, password)
-      .then((userCredential) => {
-        setErrorMessage('');
-        navigation.navigate("MyTabs");
-      })
-      .catch((error) => {
-       setErrorMessage('Tài khoản hoặc mật khẩu không đúng');
-      });
+    const phoneNumber = PhoneNumber.isPossibleNumber(sdt, countryCode);
+    if (phoneNumber) {
+      const formattedSDT = sdt.replace(/^0+/, "");
+      //loại bỏ số 0 ở đầu số điện thoại
+      firebase
+        .auth()
+        .signInWithEmailAndPassword(
+          `${callingCode}${formattedSDT}@gmail.com`,
+          password
+        )
+        .then((userCredential) => {
+          setErrorMessage("");
+          navigation.navigate("MyTabs");
+        })
+        .catch((error) => {
+          setErrorMessage("Tài khoản hoặc mật khẩu không đúng");
+        });
+    } else {
+      setErrorMessage("Số điện thoại không hợp lệ cho quốc gia đã chọn");
+    }
   }
   return (
     <View style={styles.container}>
@@ -39,20 +59,34 @@ export default function App({navigation}) {
         <Text>Vui lòng nhập số điện thoại và mật khẩu để đăng nhập</Text>
       </View>
       <View style={styles.ViewInput}>
-        <TextInput
-          style={[
-            styles.input,
-            { borderBottomColor: isFocusedSdt ? "blue" : "gray" },
-          ]}
-          placeholder="Số điện thoại"
-          autoCapitalize="none"
-          keyboardType="phone-pad"
-          autoFocus={true}
-          value={sdt}
-          onFocus={() => setIsFocusedSdt(true)}
-          onBlur={() => setIsFocusedSdt(false)}
-          onChangeText={(text) => setsdt(text)}
-        />
+        <View
+          style={{
+            width: "90%",
+            flexDirection: "row",
+            alignItems: "center",
+            borderBottomWidth: 1,
+            borderBottomColor: isFocusedSdt ? "blue" : "gray",}}
+        >
+          <CountryPicker
+            containerButtonStyle={{ marginTop: 0 }}
+            withCallingCode
+            withFilter
+            withFlag
+            onSelect={handleCountryChange}
+            countryCode={countryCode}
+          />
+          <TextInput
+            style={[styles.input]}
+            placeholder="Số điện thoại"
+            autoCapitalize="none"
+            keyboardType="phone-pad"
+            autoFocus={true}
+            value={sdt}
+            onFocus={() => setIsFocusedSdt(true)}
+            onBlur={() => setIsFocusedSdt(false)}
+            onChangeText={(text) => setsdt(text)}
+          />
+        </View>
         <View
           style={{
             flexDirection: "row",
@@ -87,7 +121,9 @@ export default function App({navigation}) {
           </TouchableOpacity>
         </View>
       </View>
-      <Text style={{fontSize:18,color:'red',marginTop:35,marginLeft:17}}>
+      <Text
+        style={{ fontSize: 18, color: "red", marginTop: 35, marginLeft: 17 }}
+      >
         {errorMessage}
       </Text>
       <TouchableOpacity style={styles.button}>
@@ -168,7 +204,6 @@ const styles = StyleSheet.create({
     width: "90%",
     height: 50,
     fontSize: 19,
-    borderBottomWidth: 1,
   },
   ViewBottom: {
     flexDirection: "row",
