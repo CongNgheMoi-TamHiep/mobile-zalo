@@ -1,49 +1,36 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { StyleSheet, Text, View, Image, FlatList, TouchableOpacity } from "react-native";
-import { Icon } from 'zmp-ui'
+import axiosPrivate from "../api/axiosPrivate";
+import {auth} from '../config/firebase';
 
-//  dữ liệu dùng để test
-const data = [
-    {
-        id: 1,
-        username: "Nguyen Tuan Hiep",
-        image: 'https://1.bp.blogspot.com/-kL3SubeHWUc/VD_xwbbpKkI/AAAAAAAAQFs/eh8c2lFdsjc/s1600/Anime-image-anime-36250619-1024-768.jpg',
-        time: "21 minutes",
-        latestMessage: "alo alo",
-        conversationId: 1,  // ID của cuộc trò chuyện
-        messages: [
-            { _id: 1, text: 'Hello!', createdAt: new Date(), user: { _id: 2 } },
-            { _id: 2, text: 'Hi there!', createdAt: new Date(), user: { _id: 1 } }
-            // Thêm tin nhắn khác nếu cần
-        ]
-    },
-    {
-        id: 2,
-        username: "Nguyen Van Long",
-        image: 'https://i.pinimg.com/474x/d6/7a/14/d67a14cdca5e920039d2a8acc6de3892.jpg',
-        time: "1 hours",
-        latestMessage: "anh yeu em",
-        conversationId: 2,
-        messages: [
-            { _id: 3, text: 'Hi!', createdAt: new Date(), user: { _id: 1 } },
-            { _id: 4, text: 'Em cũng yêu anh!', createdAt: new Date(), user: { _id: 2 } }
-            // Thêm tin nhắn khác nếu cần
-        ]
-    }
-];
 
 export default function Chat({ navigation }) {
+    //  danh sách các cuộc  hội thoại
+    const [data, setData] = useState([]);
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const userId = auth.currentUser.uid
+                const userConversations = await axiosPrivate(`/userConversations/${userId}`);
+                setData(userConversations.conversations);
+            } catch (error) {
+                console.error('Error fetching user conversations:', error);
+            }
+        })();
+    }, []);
+
+    if (data.length === 0) {
+        return (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text>Chưa có cuộc hội thoại</Text>
+          </View>
+        );
+      }
     // render lên màn hình các đoạn chat của user
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.viewOfFlatlist}
-            // onPress={() => navigation.navigate("Conversations", {
-            //     userId: 1,  // ID của người dùng hiện tại (hoặc có thể đăng nhập)
-            //     username: item.username,
-            //     image: item.image,
-            //     conversationId: item.conversationId,
-            //     messages: item.messages
-            // })}
             onPress={() => {
                 navigation.navigate("Conversations", {
                     conversationData: item, // Chuyển toàn bộ thông tin cuộc trò chuyện

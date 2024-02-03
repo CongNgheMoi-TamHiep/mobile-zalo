@@ -1,15 +1,19 @@
-import React, { useState, useLayoutEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useRef, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { GiftedChat, Send, Bubble } from "react-native-gifted-chat";
 import { InputToolbar } from "react-native-gifted-chat";
 import * as ImagePicker from 'expo-image-picker';
 import { Video, ResizeMode } from 'expo-av';
-
+import axiosPrivate from "../api/axiosPrivate";
+import { auth } from '../config/firebase';
 
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { AntDesign, SimpleLineIcons, Ionicons, MaterialIcons, Entypo, Octicons } from '@expo/vector-icons';
 
 export default function Conversations({ route, navigation }) {
+
+    // thong tin user tim kiem
+    const searchUser = route.params?.searchUser;
 
     // kiểm tra xem người  dùng có nhập chữ hay không
     const [isTyping, setIsTyping] = useState(false);
@@ -57,7 +61,9 @@ export default function Conversations({ route, navigation }) {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsEditing: true,
-            aspect: [1, 1],
+            // base64: false, // disable base64 encoding
+            // aspect: [0, 0], // set aspect ratio to 0 to keep original size
+            aspect: [0, 0],
             quality: 1,
             multiple: true,
         });
@@ -87,31 +93,17 @@ export default function Conversations({ route, navigation }) {
 
 
     // dữ liệu giả
-    const [messages, setMessages] = useState([
-        {
-            _id: 1,
-            text: 'Chào bạn!',
-            createdAt: new Date(),
-            user: {
-                _id: 2,
-                name: 'An',
-            },
-        },
-        {
-            _id: 2,
-            text: 'Chào bạn! Mình rất vui được gặp bạn.',
-            createdAt: new Date(),
-            user: {
-                _id: 1,
-                name: 'Hiệp',
-            },
-        },
-    ]);
+    const [messages, setMessages] = useState([]);
 
+    //  đang code chưa xong.................
+
+    useEffect(() => {
+        console.log(messages)
+    }, [messages])
 
     // custom header
     useLayoutEffect(() => {
-        const originalTitle = "Nguyen Tuan Hiep"; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
+        const originalTitle = `${searchUser.name}`; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
         const maxTitleLength = 20; // Số ký tự tối đa bạn muốn hiển thị trước khi cắt
         // Tạo chuỗi tiêu đề được hiển thị (đảm bảo không vượt quá maxTitleLength)
         const displayedTitle = originalTitle.length > maxTitleLength
@@ -136,8 +128,10 @@ export default function Conversations({ route, navigation }) {
                             color: '#fff',
                             maxWidth: 215, // Giới hạn chiều rộng của Text
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis', // Hiển thị dấu ba chấm khi vượt quá chiều rộng
+                            //textOverflow: 'ellipsis', // Hiển thị dấu ba chấm khi vượt quá chiều rộng
                         }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                     >
                         {displayedTitle}
                     </Text>
@@ -156,7 +150,74 @@ export default function Conversations({ route, navigation }) {
 
 
     // xử lí khi gửi dữ liệu
-    const onSend = (newMessages = []) => {
+    // const onSend = async (newMessages = []) => {
+    //     const updatedMessages = newMessages.map(message => {
+    //         const { type, image, video, ...rest } = message;
+
+    //         // Kiểm tra kiểu phương tiện và xử lý dữ liệu tương ứng
+    //         if (type === 'image') {
+    //             return {
+    //                 ...rest,
+    //                 image,
+    //             };
+    //         } else if (type === 'video') {
+    //             return {
+    //                 ...rest,
+    //                 video,
+    //             };
+    //         }
+
+    //         // Xử lý các trường hợp khác (nếu có)
+    //         return message;
+    //     });
+    //     const conversationsId = route.params?.conversationId;
+    //     const userId = auth.currentUser.uid;
+    //     const chats = await axiosPrivate(`/chat/${conversationsId}`);
+    //     console.log('Thong tin doan chat:\n' + chats);
+    //     if (chats.length === 0) {
+    //         const newConversation = await axiosPrivate.post(`/conversation`, {
+    //             type: 'couple',
+    //             members: [auth.currentUser.uid, searchUser._id]
+    //         });
+    //         console.log('===============================================')
+    //         console.log('new conversation:');
+    //         console.log(newConversation);
+    //         const newConversationId = newConversation._id;
+    //         console.log(auth.currentUser.uid)
+    //         console.log("message: " + updatedMessages)
+    //         await axiosPrivate.post(`/chat`, {
+    //             conversationsId: newConversationId,
+    //             senderInfo: {
+    //                 userId: auth.currentUser.uid,
+    //                 content: {
+    //                     text: updatedMessages
+    //                 },
+    //                 createdAt: new Date()
+    //             }
+    //         });
+    //         // await axiosPrivate.patch(`/userConversations/add-conversation/${auth.currentUser.uid}`,{
+    //         //     userId: auth.currentUser.uid,
+    //         //     conversations: [
+    //         //         {
+    //         //             userName: searchUser.name,
+    //         //             conversationId: newConversationId,
+    //         //         }
+    //         //     ]
+    //         // });
+    //         // await axiosPrivate.patch(`/userConversations/add-conversation/${searchUser._id}`,{
+    //         //     userId: auth.currentUser.uid,
+    //         //     conversations: [
+    //         //         {
+    //         //             userName: searchUser.name,
+    //         //             conversationId: newConversationId,
+    //         //         }
+    //         //     ]
+    //         // });
+
+    //     }
+    //     setMessages(GiftedChat.append(messages, updatedMessages));
+    // };
+    const onSend = async (newMessages = []) => {
         const updatedMessages = newMessages.map(message => {
             const { type, image, video, ...rest } = message;
 
@@ -177,8 +238,51 @@ export default function Conversations({ route, navigation }) {
             return message;
         });
 
-        setMessages(GiftedChat.append(messages, updatedMessages));
+        try {
+            // bây giờ khi tìm kiếm cần xác định được rằng đã chat hay chưa chat
+            const conversationsId = route.params?.conversationId; // chổ này là định lấy id của conversation đã chat rồi(nhưng hiện tại thì do chưa chat nên không lấy được)
+            const userId = auth.currentUser.uid;
+            const chats = await axiosPrivate(`/chat/${conversationsId}`);
+
+            if (chats.length === 0) {
+                const newConversation = await axiosPrivate.post(`/conversation`, {
+                    type: 'couple',
+                    members: [auth.currentUser.uid, searchUser._id]
+                });
+
+                console.log('===============================================')
+                console.log('new conversation ID:');
+                console.log(newConversation._id);
+
+                const newConversationId = newConversation._id;
+                console.log(auth.currentUser.uid)
+
+                // Bắt đầu try...catch block để xử lý lỗi Axios
+                try {
+                    await axiosPrivate.post(`/chat`, {
+                        conversationsId: newConversationId,
+                        senderInfo: {
+                            userId: userId,
+                            content: {
+                                text: updatedMessages
+                            },
+                            createdAt: new Date()
+                        }
+                    });
+
+                    // Các bước khác ở đây...
+
+                    setMessages(GiftedChat.append(messages, updatedMessages));
+                } catch (error) {
+                    console.error('Error sending chat message:', error);
+                }
+            }
+        } catch (error) {
+            console.error('Error fetching chat:', error);
+        }
     };
+
+
 
     // gửi video
     const renderMessageVideo = (props) => {
@@ -266,16 +370,17 @@ export default function Conversations({ route, navigation }) {
                 <Bubble
                     {...props}
                     imageStyle={{
-                        width: 200,
-                        height: 200,
-                        borderRadius: 0,
+                        width: 250,
+                        height: 300,
+                        borderRadius: 20,
                     }}
                     wrapperStyle={{
                         right: {
-                            backgroundColor: '#F2F2F2'
+                            backgroundColor: '#F2F2F2',
+
                         },
                         left: {
-                            backgroundColor: '#fff'
+                            backgroundColor: '#fff',
                         }
                     }}
                 />
@@ -287,8 +392,8 @@ export default function Conversations({ route, navigation }) {
                 <Bubble
                     {...props}
                     videoStyle={{
-                        width: 200,
-                        height: 200,
+                        width: 250,
+                        height: 300,
                         borderRadius: 0,
                     }}
                     wrapperStyle={{
@@ -308,7 +413,7 @@ export default function Conversations({ route, navigation }) {
                 {...props}
                 wrapperStyle={{
                     right: {
-                        backgroundColor: '#0084FF'
+                        backgroundColor: '#0084FF',
                     },
                     left: {
                         backgroundColor: '#fff'

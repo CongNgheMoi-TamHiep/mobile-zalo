@@ -68,18 +68,27 @@ function ChatStack() {
 function AuthStack() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
-      <Stack.Navigator>
-        {/* <Stack.Screen
-        name="MyTabs"
-        component={MyTabs}
-        options={{ headerShown: false }}
-      /> */}
+      <Stack.Navigator initialRouteName="Home">
         <Stack.Screen
           name="Home"
           component={Home}
           options={{ headerShown: false }}
         />
-
+        {/* <Stack.Screen
+          name="MyTabs"
+          component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Conversations"
+          component={Conversations}
+          options={{ headerShown: true }}
+        />
+        <Stack.Screen
+          name="Search"
+          component={Search}
+          options={{ headerShown: false }}
+        /> */}
         <Stack.Screen
           name="Login"
           component={Login}
