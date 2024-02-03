@@ -126,6 +126,7 @@ export default function App({ navigation, route }) {
         const response = await axiosPrivate.post('/auth/register', dataUser);
         await axiosPrivate.post('/userConversations', {
           userId: result.user.uid, 
+          _id: result.user.uid, 
           conversations: [],
         }); 
         // navigation.navigate("TestDK", { name: name });
