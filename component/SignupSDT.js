@@ -42,11 +42,11 @@ export default function App({ navigation, route }) {
 
     // Thực hiện bất kỳ điều gì khác khi chọn quốc gia
   };
-  console.log(callingCode);
+  // console.log(callingCode);
   const [errorSDT, setErrorSDT] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
   function handelTaoSDT() {
-    console.log("countryCode"+countryCode);
+    // console.log("countryCode"+countryCode);
 
     const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
     if (phoneNumber) {

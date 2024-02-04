@@ -17,6 +17,7 @@ import Contact from "./component/Contacts";
 import SignupAuth from "./component/SignupAuth";
 import TestDK from "./component/TestDK";
 import Search from "./component/Search";
+import AddInfoUser from "./component/AddInfoUser";
 const Stack = createNativeStackNavigator();
 const AuthenticatedUserContext = createContext({});
 import { getAuth } from "firebase/auth";
@@ -39,6 +40,11 @@ function ChatStack() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Stack.Navigator>
+      <Stack.Screen
+        name="AddInfoUser"
+        component={AddInfoUser}
+        options={{ headerShown: false }}
+      />
         <Stack.Screen
           name="MyTabs"
           component={MyTabs}
@@ -69,11 +75,7 @@ function AuthStack() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Stack.Navigator>
-        {/* <Stack.Screen
-        name="MyTabs"
-        component={MyTabs}
-        options={{ headerShown: false }}
-      /> */}
+       
         <Stack.Screen
           name="Home"
           component={Home}
@@ -136,6 +138,7 @@ function AuthStack() {
             },
           }}
         />
+         
       </Stack.Navigator>
     </SafeAreaView>
   );
@@ -184,3 +187,4 @@ export default function App() {
     </AuthenticatedUserProvider>
   );
 }
+export { AuthenticatedUserContext };
