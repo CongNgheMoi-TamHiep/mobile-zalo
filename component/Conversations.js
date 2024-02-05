@@ -22,9 +22,9 @@ export default function Conversations({ route, navigation }) {
     const [conversation, setConversation] = useState({});
 
     useEffect(() => {
-        (async ()=> { 
+        (async () => {
             const conversationId = route.params?.conversationId;
-            if(conversationId) {
+            if (conversationId) {
                 const conversation = await axiosPrivate.get(`/conversation/${conversationId}`);
                 console.log(conversation)
                 console.log("conversation")
@@ -163,75 +163,8 @@ export default function Conversations({ route, navigation }) {
 
 
     // xử lí khi gửi dữ liệu
-    // const onSend = async (newMessages = []) => {
-    //     const updatedMessages = newMessages.map(message => {
-    //         const { type, image, video, ...rest } = message;
-
-    //         // Kiểm tra kiểu phương tiện và xử lý dữ liệu tương ứng
-    //         if (type === 'image') {
-    //             return {
-    //                 ...rest,
-    //                 image,
-    //             };
-    //         } else if (type === 'video') {
-    //             return {
-    //                 ...rest,
-    //                 video,
-    //             };
-    //         }
-
-    //         // Xử lý các trường hợp khác (nếu có)
-    //         return message;
-    //     });
-    //     const conversationsId = route.params?.conversationId;
-    //     const userId = auth.currentUser.uid;
-    //     const chats = await axiosPrivate(`/chat/${conversationsId}`);
-    //     console.log('Thong tin doan chat:\n' + chats);
-    //     if (chats.length === 0) {
-    //         const newConversation = await axiosPrivate.post(`/conversation`, {
-    //             type: 'couple',
-    //             members: [auth.currentUser.uid, searchUser._id]
-    //         });
-    //         console.log('===============================================')
-    //         console.log('new conversation:');
-    //         console.log(newConversation);
-    //         const newConversationId = newConversation._id;
-    //         console.log(auth.currentUser.uid)
-    //         console.log("message: " + updatedMessages)
-    //         await axiosPrivate.post(`/chat`, {
-    //             conversationsId: newConversationId,
-    //             senderInfo: {
-    //                 userId: auth.currentUser.uid,
-    //                 content: {
-    //                     text: updatedMessages
-    //                 },
-    //                 createdAt: new Date()
-    //             }
-    //         });
-    //         // await axiosPrivate.patch(`/userConversations/add-conversation/${auth.currentUser.uid}`,{
-    //         //     userId: auth.currentUser.uid,
-    //         //     conversations: [
-    //         //         {
-    //         //             userName: searchUser.name,
-    //         //             conversationId: newConversationId,
-    //         //         }
-    //         //     ]
-    //         // });
-    //         // await axiosPrivate.patch(`/userConversations/add-conversation/${searchUser._id}`,{
-    //         //     userId: auth.currentUser.uid,
-    //         //     conversations: [
-    //         //         {
-    //         //             userName: searchUser.name,
-    //         //             conversationId: newConversationId,
-    //         //         }
-    //         //     ]
-    //         // });
-
-    //     }
-    //     setMessages(GiftedChat.append(messages, updatedMessages));
-    // };
     const onSend = async (newMessages = []) => {
-                const updatedMessages = newMessages.map(message => {
+        const updatedMessages = newMessages.map(message => {
             const { type, image, video, ...rest } = message;
 
             // Kiểm tra kiểu phương tiện và xử lý dữ liệu tương ứng
@@ -251,32 +184,32 @@ export default function Conversations({ route, navigation }) {
             return message;
         });
 
-        const {text} = {...updatedMessages[0]}; 
-  
+        const { text } = { ...updatedMessages[0] };
+
         // trường hợp chọn vào userConversation
         let conversationId = route.params?.conversationId;
         const currentUserInfo = await axiosPrivate(`/user/${auth.currentUser.uid}`);
         const searchUserInfo = await axiosPrivate(`/user/${searchUser._id}`);
 
-        if(conversationId) {
+        if (conversationId) {
             // do nothing for now
-        } 
+        }
         // trường hợp chọn vào user
-        else { 
+        else {
             conversationId = combineUserId(auth.currentUser.uid, searchUser._id);
             const conversation1 = await axiosPrivate(`conversation/${conversationId}`);
             setConversation(conversation1);
             // console.log("conversation1:")
             // console.log(conversation1)
             // fetch userinfo 
-            
+
 
             // đã có conversation
-            if(conversation1?._id) { 
+            if (conversation1?._id) {
                 console.log("đã có conversation");
-            } 
+            }
             // chưa có conversation
-            else { 
+            else {
 
 
                 // console.log("currentUserInfo: ");
@@ -313,7 +246,7 @@ export default function Conversations({ route, navigation }) {
                 setConversation(savedConversation);
             }
         }
-        
+
         // tạo new chat
         const chat = await axiosPrivate.post(`/chat`, {
             conversationId,
@@ -321,24 +254,24 @@ export default function Conversations({ route, navigation }) {
                 _id: currentUserInfo._id,
                 avatar: currentUserInfo.avatar,
                 name: currentUserInfo.name
-            }, 
-            content: {text}
+            },
+            content: { text }
         });
-        
+
         // console.log("chat: ");
         // console.log(chat);
 
         // update userConversations cho các members
         // console.log("conversation: ")
         // console.log(conversation)
-        for(let member of conversation.members) {
+        for (let member of conversation.members) {
             let avatar = member._id !== currentUserInfo._id ? currentUserInfo.avatar : searchUserInfo.avatar
             let userName = member._id !== currentUserInfo._id ? currentUserInfo.name : searchUserInfo.name
-            let lassMess = { 
+            let lassMess = {
                 _id: chat._id,
                 senderInfo: chat.senderInfo,
                 owner: member._id === currentUserInfo._id,
-                content: {text}
+                content: { text }
             }
             console.log("lassMess: ")
             console.log(lassMess)
@@ -347,7 +280,7 @@ export default function Conversations({ route, navigation }) {
                     userName,
                     conversationId: conversationId,
                     lassMess,
-                    watched: false, 
+                    watched: false,
                     avatar
                 }
             );
