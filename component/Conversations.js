@@ -334,19 +334,20 @@ export default function Conversations({ route, navigation }) {
         for(let member of conversation.members) {
             let avatar = member._id !== currentUserInfo._id ? currentUserInfo.avatar : searchUserInfo.avatar
             let userName = member._id !== currentUserInfo._id ? currentUserInfo.name : searchUserInfo.name
-            let lassMess = { 
+            let lastMess = { 
                 _id: chat._id,
                 senderInfo: chat.senderInfo,
                 owner: member._id === currentUserInfo._id,
-                content: {text}
+                content: {text}, 
+                createdAt: chat.createdAt, 
             }
-            console.log("lassMess: ")
-            console.log(lassMess)
+            console.log("lastMess: ")
+            console.log(lastMess)
             await axiosPrivate.patch(`/userConversations/add-conversation/${member._id}`,
                 {
                     userName,
                     conversationId: conversationId,
-                    lassMess,
+                    lastMess,
                     watched: false, 
                     avatar
                 }
