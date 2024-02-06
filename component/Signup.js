@@ -21,14 +21,24 @@ export default function App({navigation}) {
     setErorName('')
   };
   function handelTaoTen() {
-    if(name.length>=2 && name.length<=40){
-        navigation.navigate('SignupSDT',{name:name})
-    }
-    else{
-        setErorName('Tên quá ngắn. Vui lòng nhập tên dài hơn 2 kí tự và không quá 40 kí tự')
-    }
+    // Kiểm tra xem tên có đúng định dạng không
+    const nameRegex = /^[a-zA-Z]+(?: [a-zA-Z]+)*$/;
 
-  }
+    if (nameRegex.test(name.trim())) {
+        // Chuyển chữ cái đầu tiên sau dấu cách thành chữ in hoa
+        const formattedName = name.replace(/(?:^|\s)\S/g, function(a) { return a.toUpperCase(); });
+
+        // Kiểm tra độ dài của tên
+        if (formattedName.length >= 2 && formattedName.length <= 40) {
+          // console.log(formattedName);
+            navigation.navigate('SignupSDT', { name: formattedName });
+        } else {
+            setErorName('Tên quá ngắn. Vui lòng nhập tên dài hơn 2 kí tự và không quá 40 kí tự');
+        }
+    } else {
+        setErorName('Tên không hợp lệ. Vui lòng chỉ nhập chữ cái và dấu cách');
+    }
+}
   return (
     <View style={styles.container}>
       <Text style={{ fontSize: 19, fontWeight: 700 }}>Tên Zalo</Text>

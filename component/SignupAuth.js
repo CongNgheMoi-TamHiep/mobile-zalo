@@ -11,14 +11,14 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import { FirebaseRecaptchaVerifierModal } from "expo-firebase-recaptcha";
 import { firebaseConfig } from "../config/firebase.js";
 import firebase from "firebase/compat/app";
-import axiosPrivate from '../api/axiosPrivate';
-import {REACT_APP_API_URL} from '@env'
+import axiosPrivate from "../api/axiosPrivate";
+import { REACT_APP_API_URL } from "@env";
 
 export default function App({ navigation, route }) {
   const [verificationCode, setVerificationCode] = useState("");
   const [timer, setTimer] = useState(60);
   const [isEnterCode, setIsEnterCode] = useState(false);
-  console.log(route.params.SDT);
+  // console.log(route.params.SDT);
   useEffect(() => {
     let intervalId;
     if (timer > 0) {
@@ -49,7 +49,7 @@ export default function App({ navigation, route }) {
 
   const senVerification = () => {
     let phoneProvider = new firebase.auth.PhoneAuthProvider();
-    console.log(phoneNumber);
+    // console.log(phoneNumber);
     phoneProvider
       .verifyPhoneNumber(phoneNumber, recaptchaVerifier.current)
       .then((verificationId) => {
@@ -67,7 +67,6 @@ export default function App({ navigation, route }) {
   const name = route.params.name;
   const password = route.params.password;
   const number = route.params.SDT;
-  
 
   const linkEmailCredential = () => {
     const emailCredential = firebase.auth.EmailAuthProvider.credential(
@@ -93,26 +92,6 @@ export default function App({ navigation, route }) {
       verificationId,
       verificationCode
     );
-
-    // firebase
-    //   .auth()
-    //   .signInWithCredential(credential)
-    //   .then((result) => {
-    //     linkEmailCredential();
-    //     fetch("http://192.168.1.221:3000/api/user/register", {
-    //       method: "POST",
-    //       headers: {
-    //         "Content-Type": "application/json",
-    //       },
-    //       body: JSON.stringify(dataUser),
-    //     }).then((response) => console.log("111123  " + response.json()));
-    //     navigation.navigate("TestDK", { name: name });
-    //   })
-    //   .catch((err) => {
-    //     // console.log(err);
-    //     setErrorCode("Mã OTP không đúng, vui lòng kiểm tra lại.");
-    //   });
-
     firebase.auth().signInWithCredential(credential).then(async (result) => {
       await linkEmailCredential();
       try {
@@ -120,16 +99,13 @@ export default function App({ navigation, route }) {
           name: name,
           number:phoneNumber,
           _id: result.user.uid,
-          avatar: "https://images.pexels.com/photos/14940646/pexels-photo-14940646.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
         };
-        
         const response = await axiosPrivate.post('/auth/register', dataUser);
         await axiosPrivate.post('/userConversations', {
           userId: result.user.uid, 
           _id: result.user.uid, 
           conversations: [],
         }); 
-        // navigation.navigate("TestDK", { name: name });
       } catch (err) {
         setErrorCode("Mã OTP không đúng, vui lòng kiểm tra lại.");
       }
