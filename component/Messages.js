@@ -48,7 +48,7 @@ export default function Chat({ navigation }) {
         <TouchableOpacity
             style={styles.viewOfFlatlist}
             onPress={() => {
-                navigation.navigate('Conversations', { conversationId: item.conversationId })
+                navigation.navigate('Conversations', { conversationInfo: item })
             }}
         >
             <View style={{ width: '20%', height: 70, alignItems: 'center' }}>
