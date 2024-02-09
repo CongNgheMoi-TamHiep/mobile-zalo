@@ -116,7 +116,7 @@ export default function Conversations({ route, navigation }) {
 
     // custom header
     useLayoutEffect(() => {
-        const originalTitle = `${searchUser?.name || conversationInfo.userName}`; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
+        const originalTitle = `${searchUser?.name || conversationInfo?.userName}`; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
         const maxTitleLength = 20; // Số ký tự tối đa bạn muốn hiển thị trước khi cắt
         // Tạo chuỗi tiêu đề được hiển thị (đảm bảo không vượt quá maxTitleLength)
         const displayedTitle = originalTitle.length > maxTitleLength
@@ -188,9 +188,9 @@ export default function Conversations({ route, navigation }) {
         const { text } = { ...updatedMessages[0] };
 
         // trường hợp chọn vào userConversation
-        let conversationId = conversationInfo.conversationId;
+        let conversationId = conversationInfo?.conversationId;
         const currentUserInfo = await axiosPrivate(`/user/${auth.currentUser.uid}`);
-        const searchUserInfo = await axiosPrivate(`/user/${searchUser._id}`);
+        const searchUserInfo = await axiosPrivate(`/user/${searchUser?._id || conversationInfo?.userId}`); 
         // console.log("currentUserInfo: ")
         // console.log(currentUserInfo)
         
@@ -202,31 +202,14 @@ export default function Conversations({ route, navigation }) {
             conversationId = combineUserId(auth.currentUser.uid, searchUser._id);
             const conversation1 = await axiosPrivate(`conversation/${conversationId}`);
             
-            // console.log("conversation1:")
-            // console.log(conversation1)
-            // fetch userinfo 
-
-
             // đã có conversation
             if (conversation1?._id) {
                 setConversation(conversation1);
                 console.log("đã có conversation");
             }
+
             // chưa có conversation
             else {
-
-
-                // console.log("currentUserInfo: ");
-                // console.log(currentUserInfo);
-                // console.log("");
-                // console.log("");
-                // console.log("");
-                // console.log("searchUserInfo: ")
-                // console.log(searchUserInfo)
-                // console.log("");
-                // console.log("");
-                // console.log("");
-                // tạo new conversation
                 const savedConversation = await axiosPrivate.post(`/conversation`, {
                     _id: conversationId,
                     type: 'couple',
@@ -242,11 +225,6 @@ export default function Conversations({ route, navigation }) {
                         }
                     ]
                 })
-                // console.log("savedConversation: ");
-                // console.log(savedConversation);
-                // console.log("");
-                // console.log("");
-                // console.log("");
                 setConversation(savedConversation);
             }
         }
@@ -262,15 +240,16 @@ export default function Conversations({ route, navigation }) {
             content: { text }
         });
 
-        // console.log("chat: ");
-        // console.log(chat);
+        console.log("chat: ");
+        console.log(chat);
 
-        // update userConversations cho các members
+        // update userConversations cho các members (ở đây chỉ xử lý trường hợp couple)
         // console.log("conversation: ")
         // console.log(conversation)
         for (let member of conversation.members) {
-            let avatar = member._id !== currentUserInfo._id ? currentUserInfo.avatar : searchUserInfo.avatar
-            let userName = member._id !== currentUserInfo._id ? currentUserInfo.name : searchUserInfo.name
+            let avatar = member._id !== currentUserInfo._id ? currentUserInfo.avatar : searchUserInfo?.avatar
+            let userName = member._id !== currentUserInfo._id ? currentUserInfo.name : searchUserInfo?.name
+            let userId = searchUserInfo?._id ; 
             let lastMess = { 
                 _id: chat._id,
                 senderInfo: chat.senderInfo,
@@ -282,8 +261,9 @@ export default function Conversations({ route, navigation }) {
             // console.log(lastMess)
             await axiosPrivate.patch(`/userConversations/add-conversation/${member._id}`,
                 {
+                    userId, 
                     userName,
-                    conversationId: conversationId,
+                    conversationId,
                     lastMess,
                     watched: false, 
                     avatar
