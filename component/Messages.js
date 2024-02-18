@@ -15,9 +15,7 @@ export default function Chat({ navigation }) {
                 const userId = auth.currentUser.uid
                 const userConversations = await axiosPrivate(`/userConversations/${userId}`);
                 console.log("user conversation")
-                console.log(userConversations.conversations)
-                console.log("data =================================")
-                console.log(data)
+                console.log(userConversations.conversations[0].lastMess.createdAt)
                 setData(userConversations.conversations);
             } catch (error) {
                 console.error('Error fetching user conversations:', error);
@@ -43,6 +41,11 @@ export default function Chat({ navigation }) {
             </View>
         );
     }
+
+    const formatTimeSendMessage = (timeString) => {
+        const timeFormat = timeString.slice(11, 16);
+        return timeFormat;
+    }
     // render lên màn hình các đoạn chat của user
     const renderItem = ({ item }) => (
         <TouchableOpacity
@@ -63,10 +66,10 @@ export default function Chat({ navigation }) {
                         fontSize: 18, fontWeight: '800', color: 'black'
                     }}
                 >{item.userName}</Text>
-                <Text style={{ fontSize: 16, color: 'grey' }}>{item.lassMess.content.text}</Text>
+                <Text style={{ fontSize: 16, color: 'grey' }}>{item.lastMess.content.text}</Text>
             </View>
             <View style={{ width: '25%', height: '100%', backgroundColor: '#fff', alignItems: 'center', marginTop: 5 }}>
-                <Text style={{ color: 'grey', fontSize: 14 }}>20:20</Text>
+                <Text style={{ color: 'grey', fontSize: 14 }}>{formatTimeSendMessage(item.lastMess.createdAt)}</Text>
             </View>
         </TouchableOpacity>
     )

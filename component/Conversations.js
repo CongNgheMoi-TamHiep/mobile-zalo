@@ -22,13 +22,28 @@ export default function Conversations({ route, navigation }) {
     const [conversation, setConversation] = useState({});
 
     useEffect(() => {
+        const conversationInfo = route.params?.conversationInfo;
+        // console.log('conversation infoooooooo ==========================')
+        const conversationId = conversationInfo.conversationId;
         (async () => {
-            const conversationId = conversationInfo?.conversationId;
             if (conversationId) {
-                const conversation = await axiosPrivate.get(`/conversation/${conversationId}`);
-                // console.log(conversation)
-                // console.log("conversation")
-                setConversation(conversation);
+                const chats = await axiosPrivate.get(`/chat/${conversationId}`);
+                console.log("chat sau khi lay api vee bang conversation id ==============================")
+                console.log(chats)
+                const formattedMessages = chats.map(message => ({
+                    _id: message._id,
+                    text: message.content.text,
+                    createdAt: new Date(message.createdAt),
+                    user: {
+                        _id: message.senderInfo._id,
+                        name: message.senderInfo.name,
+                        avatar: message.senderInfo.avatar
+                    }
+                }));
+                setMessages(formattedMessages.reverse());
+                console.log('MESSAGE ====================================================')
+                console.log(messages)
+                // setConversation(conversation);
             }
         })();
     }, [])
@@ -108,11 +123,6 @@ export default function Conversations({ route, navigation }) {
     // dữ liệu giả
     const [messages, setMessages] = useState([]);
 
-    //  đang code chưa xong.................
-
-    useEffect(() => {
-        console.log(messages)
-    }, [messages])
 
     // custom header
     useLayoutEffect(() => {
@@ -196,6 +206,7 @@ export default function Conversations({ route, navigation }) {
         
         if (conversationId) {
             // do nothing for now
+
         }
         // trường hợp chọn vào user
         else {
@@ -270,7 +281,6 @@ export default function Conversations({ route, navigation }) {
                 }
             );
         }
-
 
 
         // try {
@@ -499,7 +509,7 @@ export default function Conversations({ route, navigation }) {
             onBlur={onBlur}
             placeholder="Messages"
             user={{
-                _id: 2,
+                _id: auth.currentUser.uid,
             }}
             timeTextStyle={{ left: { color: '#95999A' }, right: { color: '#F0F0F0' } }} // Màu của thời gian
             renderBubble={renderBubble} // custom màu bóng chat
