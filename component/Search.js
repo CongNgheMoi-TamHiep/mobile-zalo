@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -15,18 +15,24 @@ import {
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
 import axiosPrivate from "../api/axiosPrivate.js";
+import { AuthenticatedUserContext } from "../App.js";
+
 function FormatTenQuaDai(text, maxLength) {
   return text.length > maxLength
     ? text.substring(0, maxLength - 3) + "..."
     : text;
 }
 export default function User({ navigation }) {
+  const { user } = useContext(AuthenticatedUserContext);
+
   const [searchText, setSearchText] = useState("");
   const [users, setUsers] = useState([]);
   useEffect(() => {
     (async () => {
       const users = await axiosPrivate("/user");
-      setUsers(users);
+     // lọc ra những người dùng không phải là mình
+     const new_User = users.filter((item) => item.number !== user.phoneNumber);      
+     setUsers(new_User);
     })();
   }, []);
   //hàm render danh sách liên hệ đẫ tìm
@@ -90,10 +96,22 @@ export default function User({ navigation }) {
       </View>
     </TouchableOpacity>
   );
-  // Lọc danh sách liên hệ theo tên
-  const filteredUsers = users.filter((user) =>
-    user.name.toLowerCase().includes(searchText.toLowerCase())
-  );
+  // Lọc danh sách liên hệ theo tên, kết quả tìm kiếm sẽ được hiển thị sau 300ms
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      handleSearch();
+    }, 300);
+
+    return () => clearTimeout(timerId);
+  }, [searchText]);
+
+  const handleSearch = () => {
+    const filteredUsers = users.filter((user) =>
+      user.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+    setFilteredUsers(filteredUsers);
+  };
   return (
     <View style={styles.container}>
       <View
