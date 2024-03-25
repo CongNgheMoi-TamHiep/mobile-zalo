@@ -21,7 +21,7 @@ import AddInfoUser from "./components/AddInfoUser";
 const Stack = createNativeStackNavigator();
 const AuthenticatedUserContext = createContext({});
 import { getAuth } from "firebase/auth";
-import axiosPrivate from "./api/axiosPrivate";
+import SocketProvider from "./context/SocketProvider";
 
 // ...
 
@@ -31,7 +31,9 @@ const AuthenticatedUserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   return (
     <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-      {children}
+      <SocketProvider>
+        {children}
+      </SocketProvider>
     </AuthenticatedUserContext.Provider>
   );
 };
@@ -202,3 +204,4 @@ export default function App() {
   );
 }
 export { AuthenticatedUserContext };
+export const useCurrentUser = () => useContext(AuthenticatedUserContext);

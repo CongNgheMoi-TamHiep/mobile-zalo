@@ -10,7 +10,8 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { AntDesign, SimpleLineIcons, Ionicons, MaterialIcons, Entypo, Octicons } from '@expo/vector-icons';
 import combineUserId from "../utils/combineUserId";
 import axios from "axios";
-import { AuthenticatedUserContext } from "../App";
+import { useSocket } from "../context/SocketProvider";
+import { useCurrentUser } from "../App";
 export default function Conversations({ route, navigation }) {
 
     // thong tin user tim kiem
@@ -20,7 +21,42 @@ export default function Conversations({ route, navigation }) {
     const [isTyping, setIsTyping] = useState(false);
     // hiệu ứng dấu nháy trong phần tin nhắn
     const [isFocused, setIsFocused] = useState(false);
-    const [conversation, setConversation] = useState({});
+    const [conversation, setConversation] = useState({}); 
+    const currentUser = useCurrentUser(); 
+    const [chatReceived, setChatReceived] = useState(null);
+    const [me, setMe] = useState(null); 
+    const socket = useSocket();  
+    useEffect(()=> {
+        const user = axiosPrivate.get(`/user/${currentUser.user.uid}`)
+        setMe(user);
+    }, [])
+
+    useEffect(() => {
+        const convId = conversationInfo?.conversationId || combineUserId(currentUser.user.uid, searchUser?._id);
+        socket.emit("joinRoom", convId);
+    }, [])
+
+    useEffect(() => {
+        socket.on("getMessage", (chat) => {
+          setChatReceived(chat); 
+        })
+      }, []);
+
+    useEffect(() => {
+        if (chatReceived) {
+            const newMessage = {
+                _id: chatReceived?._id || chatReceived.createdAt,
+                text: chatReceived.content.text,
+                createdAt: new Date(chatReceived.createdAt),
+                user: {
+                    _id: chatReceived.senderInfo._id,
+                    name: chatReceived.senderInfo.name,
+                    avatar: chatReceived.senderInfo.avatar
+                }
+            };
+            setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
+        }
+    }, [chatReceived])
 
     useEffect(() => {
         const conversationInfo = route.params?.conversationInfo;
@@ -30,7 +66,6 @@ export default function Conversations({ route, navigation }) {
             if (conversationId) {
                 const chats = await axiosPrivate.get(`/chat/${conversationId}`);
                 console.log("chat sau khi lay api vee bang conversation id ==============================")
-                console.log(chats)
                 const formattedMessages = chats.map(message => ({
                     _id: message._id,
                     text: message.content.text,
@@ -110,7 +145,7 @@ export default function Conversations({ route, navigation }) {
             });
 
             console.log("Selected media:", selectedMedia);
-
+auth.currentUser
             onSend(selectedMedia);
         }
     };
@@ -193,25 +228,36 @@ export default function Conversations({ route, navigation }) {
         });
 
         const { text } = { ...updatedMessages[0] };
+
+        socket.emit("sendMessage", {
+            conversationId: conversationInfo?.conversationId || combineUserId(currentUser.user.uid, searchUser?._id),
+            senderInfo: {
+              _id: currentUser.user.uid,
+              name: me.name, 
+              avatar: me.avatar, 
+            },
+            content: { text },
+            createdAt: new Date(),
+        }); 
         // trường hợp chọn vào userConversation
         let conversationId = conversationInfo?.conversationId;
         if (conversationId) {
             // do nothing for now
             const chat = await axiosPrivate.post(`/chat`, {
                 conversationId,
-                senderId: auth.currentUser.uid,
+                senderId: currentUser.user.uid,
                 content: { text }
             });
-            console.log("chat: ");
-            console.log(chat);
+            // console.log("chat: ");
+            // console.log(chat);
         } else if( searchUser?._id) {
             const chat = await axiosPrivate.post(`/chat`, {
                 receiverId: searchUser._id,
                 senderId: currentUserInfo._id,
                 content: { text }
             });
-            console.log("chat: ");
-            console.log(chat);
+            // console.log("chat: ");
+            // console.log(chat);
         } else { 
             console.log("bug!!!!")
         }
@@ -399,7 +445,7 @@ export default function Conversations({ route, navigation }) {
             onBlur={onBlur}
             placeholder="Messages"
             user={{
-                _id: auth.currentUser.uid,
+                _id: currentUser.user.uid,
             }}
             timeTextStyle={{ left: { color: '#95999A' }, right: { color: '#F0F0F0' } }} // Màu của thời gian
             renderBubble={renderBubble} // custom màu bóng chat
