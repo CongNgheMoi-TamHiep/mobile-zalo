@@ -7,21 +7,21 @@ import { Ionicons } from "@expo/vector-icons";
 import { onAuthStateChanged, signOut } from "firebase/auth";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import Login from "./component/Login";
-import Home from "./component/Home";
-import Signup from "./component/Signup";
-import SignupSDT from "./component/SignupSDT";
-import MyTabs from "./component/BottomTab";
-import Conversations from "./component/Conversations";
-import Contact from "./component/Contacts";
-import SignupAuth from "./component/SignupAuth";
-import TestDK from "./component/TestDK";
-import Search from "./component/Search";
-import AddInfoUser from "./component/AddInfoUser";
+import Login from "./components/Login";
+import Home from "./components/Home";
+import Signup from "./components/Signup";
+import SignupSDT from "./components/SignupSDT";
+import MyTabs from "./components/BottomTab";
+import Conversations from "./components/Conversations";
+import Contact from "./components/Contacts";
+import SignupAuth from "./components/SignupAuth";
+import TestDK from "./components/TestDK";
+import Search from "./components/Search";
+import AddInfoUser from "./components/AddInfoUser";
 const Stack = createNativeStackNavigator();
 const AuthenticatedUserContext = createContext({});
 import { getAuth } from "firebase/auth";
-import axiosPrivate from "./api/axiosPrivate";
+import SocketProvider from "./context/SocketProvider";
 
 // ...
 
@@ -31,7 +31,9 @@ const AuthenticatedUserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   return (
     <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-      {children}
+      <SocketProvider>
+        {children}
+      </SocketProvider>
     </AuthenticatedUserContext.Provider>
   );
 };
@@ -202,3 +204,4 @@ export default function App() {
   );
 }
 export { AuthenticatedUserContext };
+export const useCurrentUser = () => useContext(AuthenticatedUserContext);
