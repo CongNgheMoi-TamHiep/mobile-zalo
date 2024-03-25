@@ -61,7 +61,7 @@ export default function Conversations({ route, navigation }) {
     useEffect(() => {
         const conversationInfo = route.params?.conversationInfo;
         // console.log('conversation infoooooooo ==========================')
-        const conversationId = conversationInfo.conversationId;
+        const conversationId = conversationInfo?.conversationId;
         (async () => {
             if (conversationId) {
                 const chats = await axiosPrivate.get(`/chat/${conversationId}`);
@@ -248,16 +248,16 @@ auth.currentUser
                 senderId: currentUser.user.uid,
                 content: { text }
             });
-            // console.log("chat: ");
-            // console.log(chat);
+            console.log("chat: ");
+            console.log(chat);
         } else if( searchUser?._id) {
             const chat = await axiosPrivate.post(`/chat`, {
                 receiverId: searchUser._id,
-                senderId: currentUserInfo._id,
+                senderId: currentUser.user.uid,
                 content: { text }
             });
-            // console.log("chat: ");
-            // console.log(chat);
+            console.log("chat: ");
+            console.log(chat);
         } else { 
             console.log("bug!!!!")
         }
