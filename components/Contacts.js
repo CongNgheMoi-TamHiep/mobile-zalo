@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState,useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -13,10 +13,10 @@ import { FontAwesome5 } from "@expo/vector-icons";
 import { Feather } from "@expo/vector-icons";
 import axiosPrivate from "../api/axiosPrivate.js";
 import { useFocusEffect } from "@react-navigation/native";
+import { AuthenticatedUserContext } from "../App.js";
 
 import * as Contacts from "expo-contacts";
 const Tab = createMaterialTopTabNavigator();
-
 //hàm cắt tên quá dài
 function FormatTenQuaDai(text, maxLength) {
   return text.length > maxLength
@@ -25,11 +25,15 @@ function FormatTenQuaDai(text, maxLength) {
 }
 
 function BanBe() {
+const { user } = useContext(AuthenticatedUserContext);
+// console.log(user);
   const [users, setUsers] = useState([]);
   useEffect(() => {
     (async () => {
       const users = await axiosPrivate("/user");
-      setUsers(users);
+      // lọc ra những người dùng không phải là mình
+      const new_User = users.filter((item) => item.number !== user.phoneNumber);      
+      setUsers(new_User);
     })();
   }, []);
 
