@@ -100,11 +100,7 @@ export default function App({ navigation, route }) {
           number:phoneNumber,
           _id: result.user.uid,
         };
-        const response = await axiosPrivate.post('/auth/register', dataUser);
-        await axiosPrivate.post('/userConversations', {
-          userId: result.user.uid, 
-          conversations: [],
-        }); 
+        await axiosPrivate.post('/auth/register', dataUser);
       } catch (err) {
         setErrorCode("Mã OTP không đúng, vui lòng kiểm tra lại.");
       }

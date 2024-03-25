@@ -37,7 +37,7 @@ export default function User({ navigation }) {
   }, []);
   //hàm render danh sách liên hệ đẫ tìm
   const renderUserItem = ({ item }) => (
-    <TouchableOpacity onPress={() => {}}>
+    <TouchableOpacity onPress={() => { }}>
       <View style={{ alignItems: "center", width: 100 }}>
         <Image
           style={{
@@ -55,7 +55,8 @@ export default function User({ navigation }) {
   );
   //Hàm render danh sách tìm kiếm
   const renderUserItemSearch = ({ item }) => (
-    <TouchableOpacity onPress={() => {}}>
+
+    <TouchableOpacity onPress={() => { console.log(item); navigation.navigate('Conversations', { searchUser: item }) }}>
       <View
         style={{
           alignItems: "center",
@@ -180,7 +181,7 @@ export default function User({ navigation }) {
             horizontal
             //   keyExtractor={(item) => item.id.toString()}
             renderItem={renderUserItem}
-            //   contentContainerStyle={styles.userList}
+          //   contentContainerStyle={styles.userList}
           />
         </View>
       ) : filteredUsers.length === 0 ? (
@@ -193,8 +194,8 @@ export default function User({ navigation }) {
         <FlatList
           data={filteredUsers}
           renderItem={renderUserItemSearch}
-          //   keyExtractor={(item) => item.id.toString()}
-          //   contentContainerStyle={styles.userList}
+        //   keyExtractor={(item) => item.id.toString()}
+        //   contentContainerStyle={styles.userList}
         />
       )}
     </View>

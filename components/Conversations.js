@@ -1,20 +1,88 @@
-import React, { useState, useLayoutEffect, useRef } from "react";
+import React, { useState, useLayoutEffect, useRef, useEffect, useContext } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { GiftedChat, Send, Bubble } from "react-native-gifted-chat";
 import { InputToolbar } from "react-native-gifted-chat";
 import * as ImagePicker from 'expo-image-picker';
 import { Video, ResizeMode } from 'expo-av';
-
-
+import axiosPrivate from "../api/axiosPrivate";
+import { auth } from '../config/firebase';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons'
 import { AntDesign, SimpleLineIcons, Ionicons, MaterialIcons, Entypo, Octicons } from '@expo/vector-icons';
-
+import combineUserId from "../utils/combineUserId";
+import axios from "axios";
+import { useSocket } from "../context/SocketProvider";
+import { useCurrentUser } from "../App";
 export default function Conversations({ route, navigation }) {
 
+    // thong tin user tim kiem
+    const searchUser = route.params?.searchUser;
+    const conversationInfo = route.params?.conversationInfo;
     // kiểm tra xem người  dùng có nhập chữ hay không
     const [isTyping, setIsTyping] = useState(false);
     // hiệu ứng dấu nháy trong phần tin nhắn
     const [isFocused, setIsFocused] = useState(false);
+    const [conversation, setConversation] = useState({}); 
+    const currentUser = useCurrentUser(); 
+    const [chatReceived, setChatReceived] = useState(null);
+    const [me, setMe] = useState(null); 
+    const socket = useSocket();  
+    useEffect(()=> {
+        const user = axiosPrivate.get(`/user/${currentUser.user.uid}`)
+        setMe(user);
+    }, [])
+
+    useEffect(() => {
+        const convId = conversationInfo?.conversationId || combineUserId(currentUser.user.uid, searchUser?._id);
+        socket.emit("joinRoom", convId);
+    }, [])
+
+    useEffect(() => {
+        socket.on("getMessage", (chat) => {
+          setChatReceived(chat); 
+        })
+      }, []);
+
+    useEffect(() => {
+        if (chatReceived) {
+            const newMessage = {
+                _id: chatReceived?._id || chatReceived.createdAt,
+                text: chatReceived.content.text,
+                createdAt: new Date(chatReceived.createdAt),
+                user: {
+                    _id: chatReceived.senderInfo._id,
+                    name: chatReceived.senderInfo.name,
+                    avatar: chatReceived.senderInfo.avatar
+                }
+            };
+            setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
+        }
+    }, [chatReceived])
+
+    useEffect(() => {
+        const conversationInfo = route.params?.conversationInfo;
+        // console.log('conversation infoooooooo ==========================')
+        const conversationId = conversationInfo.conversationId;
+        (async () => {
+            if (conversationId) {
+                const chats = await axiosPrivate.get(`/chat/${conversationId}`);
+                console.log("chat sau khi lay api vee bang conversation id ==============================")
+                const formattedMessages = chats.map(message => ({
+                    _id: message._id,
+                    text: message.content.text,
+                    createdAt: new Date(message.createdAt),
+                    user: {
+                        _id: message.senderInfo._id,
+                        name: message.senderInfo.name,
+                        avatar: message.senderInfo.avatar
+                    }
+                }));
+                setMessages(formattedMessages.reverse());
+                console.log('MESSAGE ====================================================')
+                console.log(messages)
+                // setConversation(conversation);
+            }
+        })();
+    }, [])
 
     // video
     const videoRef = useRef(null);
@@ -35,11 +103,6 @@ export default function Conversations({ route, navigation }) {
         }
     };
 
-
-
-
-
-
     const onInputTextChanged = (text) => {
         setIsTyping(text.length > 0);
     };
@@ -57,7 +120,9 @@ export default function Conversations({ route, navigation }) {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
             allowsEditing: true,
-            aspect: [1, 1],
+            // base64: false, // disable base64 encoding
+            // aspect: [0, 0], // set aspect ratio to 0 to keep original size
+            aspect: [0, 0],
             quality: 1,
             multiple: true,
         });
@@ -80,38 +145,19 @@ export default function Conversations({ route, navigation }) {
             });
 
             console.log("Selected media:", selectedMedia);
-
+auth.currentUser
             onSend(selectedMedia);
         }
     };
 
 
     // dữ liệu giả
-    const [messages, setMessages] = useState([
-        {
-            _id: 1,
-            text: 'Chào bạn!',
-            createdAt: new Date(),
-            user: {
-                _id: 2,
-                name: 'An',
-            },
-        },
-        {
-            _id: 2,
-            text: 'Chào bạn! Mình rất vui được gặp bạn.',
-            createdAt: new Date(),
-            user: {
-                _id: 1,
-                name: 'Hiệp',
-            },
-        },
-    ]);
+    const [messages, setMessages] = useState([]);
 
 
     // custom header
     useLayoutEffect(() => {
-        const originalTitle = "Nguyen Tuan Hiep"; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
+        const originalTitle = `${searchUser?.name || conversationInfo?.name || conversationInfo?.user.name}`; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
         const maxTitleLength = 20; // Số ký tự tối đa bạn muốn hiển thị trước khi cắt
         // Tạo chuỗi tiêu đề được hiển thị (đảm bảo không vượt quá maxTitleLength)
         const displayedTitle = originalTitle.length > maxTitleLength
@@ -136,8 +182,10 @@ export default function Conversations({ route, navigation }) {
                             color: '#fff',
                             maxWidth: 215, // Giới hạn chiều rộng của Text
                             overflow: 'hidden',
-                            textOverflow: 'ellipsis', // Hiển thị dấu ba chấm khi vượt quá chiều rộng
+                            //textOverflow: 'ellipsis', // Hiển thị dấu ba chấm khi vượt quá chiều rộng
                         }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
                     >
                         {displayedTitle}
                     </Text>
@@ -152,11 +200,13 @@ export default function Conversations({ route, navigation }) {
             )
 
         });
-    }, [navigation]);
+    }, [navigation, searchUser]);
+    // console.log("conversation: ");
+    // console.log(conversation);
 
 
     // xử lí khi gửi dữ liệu
-    const onSend = (newMessages = []) => {
+    const onSend = async (newMessages = []) => {
         const updatedMessages = newMessages.map(message => {
             const { type, image, video, ...rest } = message;
 
@@ -177,8 +227,43 @@ export default function Conversations({ route, navigation }) {
             return message;
         });
 
-        setMessages(GiftedChat.append(messages, updatedMessages));
+        const { text } = { ...updatedMessages[0] };
+
+        socket.emit("sendMessage", {
+            conversationId: conversationInfo?.conversationId || combineUserId(currentUser.user.uid, searchUser?._id),
+            senderInfo: {
+              _id: currentUser.user.uid,
+              name: me.name, 
+              avatar: me.avatar, 
+            },
+            content: { text },
+            createdAt: new Date(),
+        }); 
+        // trường hợp chọn vào userConversation
+        let conversationId = conversationInfo?.conversationId;
+        if (conversationId) {
+            // do nothing for now
+            const chat = await axiosPrivate.post(`/chat`, {
+                conversationId,
+                senderId: currentUser.user.uid,
+                content: { text }
+            });
+            // console.log("chat: ");
+            // console.log(chat);
+        } else if( searchUser?._id) {
+            const chat = await axiosPrivate.post(`/chat`, {
+                receiverId: searchUser._id,
+                senderId: currentUserInfo._id,
+                content: { text }
+            });
+            // console.log("chat: ");
+            // console.log(chat);
+        } else { 
+            console.log("bug!!!!")
+        }
     };
+
+
 
     // gửi video
     const renderMessageVideo = (props) => {
@@ -266,16 +351,17 @@ export default function Conversations({ route, navigation }) {
                 <Bubble
                     {...props}
                     imageStyle={{
-                        width: 200,
-                        height: 200,
-                        borderRadius: 0,
+                        width: 250,
+                        height: 300,
+                        borderRadius: 20,
                     }}
                     wrapperStyle={{
                         right: {
-                            backgroundColor: '#F2F2F2'
+                            backgroundColor: '#F2F2F2',
+
                         },
                         left: {
-                            backgroundColor: '#fff'
+                            backgroundColor: '#fff',
                         }
                     }}
                 />
@@ -287,8 +373,8 @@ export default function Conversations({ route, navigation }) {
                 <Bubble
                     {...props}
                     videoStyle={{
-                        width: 200,
-                        height: 200,
+                        width: 250,
+                        height: 300,
                         borderRadius: 0,
                     }}
                     wrapperStyle={{
@@ -308,7 +394,7 @@ export default function Conversations({ route, navigation }) {
                 {...props}
                 wrapperStyle={{
                     right: {
-                        backgroundColor: '#0084FF'
+                        backgroundColor: '#0084FF',
                     },
                     left: {
                         backgroundColor: '#fff'
@@ -359,7 +445,7 @@ export default function Conversations({ route, navigation }) {
             onBlur={onBlur}
             placeholder="Messages"
             user={{
-                _id: 2,
+                _id: currentUser.user.uid,
             }}
             timeTextStyle={{ left: { color: '#95999A' }, right: { color: '#F0F0F0' } }} // Màu của thời gian
             renderBubble={renderBubble} // custom màu bóng chat
