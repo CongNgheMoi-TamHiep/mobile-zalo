@@ -16,7 +16,7 @@ import * as ImagePicker from "expo-image-picker";
 import axiosPrivate from "../api/axiosPrivate";
 import { AuthenticatedUserContext } from "../App.js";
 export default function User({ navigation, route }) {
-  const [isClickAVT, setIsClickAVT] = useState("Nam");
+  const [isClickAVT, setIsClickAVT] = useState("male");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
   const { user } = useContext(AuthenticatedUserContext);
@@ -115,16 +115,16 @@ export default function User({ navigation, route }) {
             />
             <TouchableOpacity
               onPress={() => {
-                setIsClickAVT("Nam");
+                setIsClickAVT("male");
               }}
               style={{
                 width: 25,
                 height: 25,
                 borderRadius: 50,
-                backgroundColor: isClickAVT === "Nam" ? "#006AF5" : "#B9BDC1",
+                backgroundColor: isClickAVT === "male" ? "#006AF5" : "#B9BDC1",
               }}
             >
-              {isClickAVT === "Nam" && (
+              {isClickAVT === "male" && (
                 <AntDesign name="check" size={24} color="white" />
               )}
             </TouchableOpacity>
@@ -144,16 +144,16 @@ export default function User({ navigation, route }) {
             />
             <TouchableOpacity
               onPress={() => {
-                setIsClickAVT("Nu");
+                setIsClickAVT("female");
               }}
               style={{
                 width: 25,
                 height: 25,
                 borderRadius: 50,
-                backgroundColor: isClickAVT === "Nu" ? "#006AF5" : "#B9BDC1",
+                backgroundColor: isClickAVT === "female" ? "#006AF5" : "#B9BDC1",
               }}
             >
-              {isClickAVT === "Nu" && (
+              {isClickAVT === "female" && (
                 <AntDesign name="check" size={24} color="white" />
               )}
             </TouchableOpacity>

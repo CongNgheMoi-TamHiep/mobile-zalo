@@ -9,7 +9,24 @@ import {
 import { MaterialIcons } from "@expo/vector-icons";
 import CountryPicker from "react-native-country-picker-modal";
 import PhoneNumber from "libphonenumber-js";
+import axiosPrivate from "../api/axiosPrivate.js";
+import axios from "axios";
+
 export default function App({ navigation, route }) {
+  useEffect(() => {
+    (async () => {
+      try {
+        const phoneNumber = "+84333900858";
+        const response = await axiosPrivate(
+          `/check/number/${phoneNumber}`
+        );
+        console.log("Response from /check/number:", response);
+      } catch (error) {
+        console.error("Error while checking phone number:", error);
+      }
+    })();
+  }, []);
+
   const [SDT, setSDT] = useState("");
   const [password, setPassword] = useState("");
   const [isSecureEntry, setIsSecureEntry] = useState(true);
@@ -27,7 +44,7 @@ export default function App({ navigation, route }) {
     setIsChecked2(!isChecked2);
   };
   useEffect(() => {
-    if (isChecked && password.length!=0 && isChecked2 && SDT.length != 0) {
+    if (isChecked && password.length != 0 && isChecked2 && SDT.length != 0) {
       setIsNext(true);
     } else {
       setIsNext(false);
@@ -38,8 +55,6 @@ export default function App({ navigation, route }) {
   const handleCountryChange = (country) => {
     setCountryCode(country.cca2);
     setCallingCode("+" + country.callingCode.join(""));
-    
-
     // Thực hiện bất kỳ điều gì khác khi chọn quốc gia
   };
   // console.log(callingCode);
@@ -50,11 +65,9 @@ export default function App({ navigation, route }) {
 
     const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
     if (phoneNumber) {
-      const formattedSDT = SDT.replace(/^0+/, '');
+      const formattedSDT = SDT.replace(/^0+/, "");
       //loại bỏ số 0 ở đầu số điện thoại
       if (password.length >= 6) {
-        
-        
         setErrorSDT("");
         setErrorPassword("");
         navigation.navigate("SignupAuth", {
@@ -121,12 +134,16 @@ export default function App({ navigation, route }) {
             </TouchableOpacity>
           )}
         </View>
-        <View style={{  width: "100%",
+        <View
+          style={{
+            width: "100%",
             paddingRight: 20,
             flexDirection: "row",
             alignItems: "center",
             borderBottomWidth: 1,
-            borderBottomColor: "blue",}}>
+            borderBottomColor: "blue",
+          }}
+        >
           <TextInput
             style={styles.input}
             placeholder="Nhập mật khẩu"
@@ -137,8 +154,8 @@ export default function App({ navigation, route }) {
             value={password}
             onChangeText={(text) => setPassword(text)}
           />
-          
-            <TouchableOpacity
+
+          <TouchableOpacity
             onPress={() => {
               setIsSecureEntry(!isSecureEntry);
             }}
