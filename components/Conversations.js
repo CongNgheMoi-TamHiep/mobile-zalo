@@ -1,4 +1,4 @@
-import React, { useState, useLayoutEffect, useRef, useEffect } from "react";
+import React, { useState, useLayoutEffect, useRef, useEffect, useContext } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { GiftedChat, Send, Bubble } from "react-native-gifted-chat";
 import { InputToolbar } from "react-native-gifted-chat";
@@ -10,6 +10,7 @@ import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityI
 import { AntDesign, SimpleLineIcons, Ionicons, MaterialIcons, Entypo, Octicons } from '@expo/vector-icons';
 import combineUserId from "../utils/combineUserId";
 import axios from "axios";
+import { AuthenticatedUserContext } from "../App";
 export default function Conversations({ route, navigation }) {
 
     // thong tin user tim kiem
@@ -67,11 +68,6 @@ export default function Conversations({ route, navigation }) {
         }
     };
 
-
-
-
-
-
     const onInputTextChanged = (text) => {
         setIsTyping(text.length > 0);
     };
@@ -126,7 +122,7 @@ export default function Conversations({ route, navigation }) {
 
     // custom header
     useLayoutEffect(() => {
-        const originalTitle = `${searchUser?.name || conversationInfo?.userName}`; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
+        const originalTitle = `${searchUser?.name || conversationInfo?.name || conversationInfo?.user.name}`; // Sau này đổi thành tên của người trong cùng cuộc hội thoại
         const maxTitleLength = 20; // Số ký tự tối đa bạn muốn hiển thị trước khi cắt
         // Tạo chuỗi tiêu đề được hiển thị (đảm bảo không vượt quá maxTitleLength)
         const displayedTitle = originalTitle.length > maxTitleLength
@@ -169,9 +165,10 @@ export default function Conversations({ route, navigation }) {
             )
 
         });
-    }, [navigation, searchUser, conversation]);
+    }, [navigation, searchUser]);
     // console.log("conversation: ");
     // console.log(conversation);
+
 
     // xử lí khi gửi dữ liệu
     const onSend = async (newMessages = []) => {
@@ -196,135 +193,28 @@ export default function Conversations({ route, navigation }) {
         });
 
         const { text } = { ...updatedMessages[0] };
-
         // trường hợp chọn vào userConversation
         let conversationId = conversationInfo?.conversationId;
-        const currentUserInfo = await axiosPrivate(`/user/${auth.currentUser.uid}`);
-        const searchUserInfo = await axiosPrivate(`/user/${searchUser?._id || conversationInfo?.userId}`); 
-        // console.log("currentUserInfo: ")
-        // console.log(currentUserInfo)
-        
         if (conversationId) {
             // do nothing for now
-
+            const chat = await axiosPrivate.post(`/chat`, {
+                conversationId,
+                senderId: auth.currentUser.uid,
+                content: { text }
+            });
+            console.log("chat: ");
+            console.log(chat);
+        } else if( searchUser?._id) {
+            const chat = await axiosPrivate.post(`/chat`, {
+                receiverId: searchUser._id,
+                senderId: currentUserInfo._id,
+                content: { text }
+            });
+            console.log("chat: ");
+            console.log(chat);
+        } else { 
+            console.log("bug!!!!")
         }
-        // trường hợp chọn vào user
-        else {
-            conversationId = combineUserId(auth.currentUser.uid, searchUser._id);
-            const conversation1 = await axiosPrivate(`conversation/${conversationId}`);
-            
-            // đã có conversation
-            if (conversation1?._id) {
-                setConversation(conversation1);
-                console.log("đã có conversation");
-            }
-
-            // chưa có conversation
-            else {
-                const savedConversation = await axiosPrivate.post(`/conversation`, {
-                    _id: conversationId,
-                    type: 'couple',
-                    members: [
-                        {
-                            _id: currentUserInfo._id,
-                            name: currentUserInfo.name,
-                            avatar: currentUserInfo.avatar
-                        }, {
-                            _id: searchUserInfo._id,
-                            name: searchUserInfo.name,
-                            avatar: searchUserInfo.avatar
-                        }
-                    ]
-                })
-                setConversation(savedConversation);
-            }
-        }
-
-        // tạo new chat
-        const chat = await axiosPrivate.post(`/chat`, {
-            conversationId,
-            senderInfo: {
-                _id: currentUserInfo._id,
-                avatar: currentUserInfo.avatar,
-                name: currentUserInfo.name
-            },
-            content: { text }
-        });
-
-        console.log("chat: ");
-        console.log(chat);
-
-        // update userConversations cho các members (ở đây chỉ xử lý trường hợp couple)
-        // console.log("conversation: ")
-        // console.log(conversation)
-        for (let member of conversation.members) {
-            let avatar = member._id !== currentUserInfo._id ? currentUserInfo.avatar : searchUserInfo?.avatar
-            let userName = member._id !== currentUserInfo._id ? currentUserInfo.name : searchUserInfo?.name
-            let userId = searchUserInfo?._id ; 
-            let lastMess = { 
-                _id: chat._id,
-                senderInfo: chat.senderInfo,
-                owner: member._id === currentUserInfo._id,
-                content: {text}, 
-                createdAt: chat.createdAt, 
-            }
-            // console.log("lastMess: ")
-            // console.log(lastMess)
-            await axiosPrivate.patch(`/userConversations/add-conversation/${member._id}`,
-                {
-                    userId, 
-                    userName,
-                    conversationId,
-                    lastMess,
-                    watched: false, 
-                    avatar
-                }
-            );
-        }
-
-
-        // try {
-        //     // bây giờ khi tìm kiếm cần xác định được rằng đã chat hay chưa chat
-        //     const conversationsId = route.params?.conversationId; // chổ này là định lấy id của conversation đã chat rồi(nhưng hiện tại thì do chưa chat nên không lấy được)
-        //     const userId = auth.currentUser.uid;
-        //     const chats = await axiosPrivate(`/chat/${conversationsId}`);
-
-        //     if (chats.length === 0) {
-        //         const newConversation = await axiosPrivate.post(`/conversation`, {
-        //             type: 'couple',
-        //             members: [auth.currentUser.uid, searchUser._id]
-        //         });
-
-        //         console.log('===============================================')
-        //         console.log('new conversation ID:');
-        //         console.log(newConversation._id);
-
-        //         const newConversationId = newConversation._id;
-        //         console.log(auth.currentUser.uid)
-
-        //         // Bắt đầu try...catch block để xử lý lỗi Axios
-        //         try {
-        //             await axiosPrivate.post(`/chat`, {
-        //                 conversationsId: newConversationId,
-        //                 senderInfo: {
-        //                     userId: userId,
-        //                     content: {
-        //                         text: updatedMessages
-        //                     },
-        //                     createdAt: new Date()
-        //                 }
-        //             });
-
-        //             // Các bước khác ở đây...
-
-        //             setMessages(GiftedChat.append(messages, updatedMessages));
-        //         } catch (error) {
-        //             console.error('Error sending chat message:', error);
-        //         }
-        //     }
-        // } catch (error) {
-        //     console.error('Error fetching chat:', error);
-        // }
     };
 
 
