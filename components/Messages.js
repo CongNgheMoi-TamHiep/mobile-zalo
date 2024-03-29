@@ -9,12 +9,19 @@ import {
 } from "react-native";
 import axiosPrivate from "../api/axiosPrivate";
 import { auth } from "../config/firebase";
+import { useSocket } from "../context/SocketProvider";
 
 export default function Chat({ navigation }) {
     //  danh sách các cuộc  hội thoại
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-
+    const socket = useSocket(); 
+    const [chatReceived, setChatReceived] = useState(null);
+    useEffect(() => {
+        socket.on("getMessage", (chat) => {
+          setChatReceived(chat); 
+        })
+    }, []);
     useEffect(() => {
         (async () => {
             try {
@@ -70,6 +77,8 @@ export default function Chat({ navigation }) {
     };
     // render lên màn hình các đoạn chat của user
     const renderItem = ({ item }) => {
+
+        const isNew = item?.conversationId === chatReceived?.conversationId; 
         return (
             <TouchableOpacity
                 style={styles.viewOfFlatlist}
@@ -104,7 +113,7 @@ export default function Chat({ navigation }) {
                         {item?.user?.name || item?.name}
                     </Text>
                     <Text style={{ fontSize: 16, color: "grey" }}>
-                        {item.lastMess.content.text}
+                        { (isNew && chatReceived?.content.text) || item.lastMess.content.text}
                     </Text>
                 </View>
                 <View
@@ -117,7 +126,7 @@ export default function Chat({ navigation }) {
                     }}
                 >
                     <Text style={{ color: "grey", fontSize: 14 }}>
-                        {formatTimeSendMessage(item.lastMess.createdAt)}
+                        {formatTimeSendMessage( (isNew && chatReceived?.createdAt) || item.lastMess.createdAt)}
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -130,7 +139,7 @@ export default function Chat({ navigation }) {
                 <FlatList
                     data={data}
                     renderItem={renderItem}
-                    keyExtractor={(item) => item.conversationId}
+                    keyExtractor={(item) => item?.conversationId}
                 />
             </View>
         </View>
