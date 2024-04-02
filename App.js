@@ -23,7 +23,7 @@ import { getAuth } from "firebase/auth";
 import SocketProvider from "./context/SocketProvider";
 import ForgetPassword from "./components/ForgetPassword.js";
 import UserInformation from "./components/UserInformation.js";
-
+import ChangePassword from "./components/ChangePassword.js";
 // ...
 
 const auth = getAuth();
@@ -67,6 +67,18 @@ function ChatStack() {
           component={UserInformation}
           options={{ headerShown: false }}
         />
+        <Stack.Screen
+        name="ChangePassword"
+        component={ChangePassword}
+        options={{
+          headerShown: true,
+          title: "Cập nhật mật khẩu",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
       </Stack.Navigator>
     </SafeAreaView>
   );
