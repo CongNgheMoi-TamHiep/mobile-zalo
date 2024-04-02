@@ -15,20 +15,21 @@ import axiosPrivate from "../api/axiosPrivate";
 import { REACT_APP_API_URL } from "@env";
 
 export default function App({ navigation, route }) {
+  //verificationCode: mã xác thực gồm 6 ký tự
   const [verificationCode, setVerificationCode] = useState("");
   const [timer, setTimer] = useState(60);
   const [isEnterCode, setIsEnterCode] = useState(false);
-  // console.log(route.params.SDT);
   useEffect(() => {
     let intervalId;
     if (timer > 0) {
+      
       intervalId = setInterval(() => {
         setTimer((prevTimer) => prevTimer - 1);
       }, 1000);
     }
     return () => clearInterval(intervalId);
   }, [timer]);
-
+  // kiểm tra mã xác thực có đủ 6 ký tự không
   useEffect(() => {
     if (verificationCode.length === 6) {
       setIsEnterCode(true);
@@ -51,7 +52,10 @@ export default function App({ navigation, route }) {
     let phoneProvider = new firebase.auth.PhoneAuthProvider();
     // console.log(phoneNumber);
     phoneProvider
-      .verifyPhoneNumber(phoneNumber, recaptchaVerifier.current)
+      .verifyPhoneNumber(phoneNumber, recaptchaVerifier.current,{
+        // mã xác thực sẽ hết hạn sau 2 phút
+        timeout: 120000 ,
+      })
       .then((verificationId) => {
         setVerificationId(verificationId);
       })
@@ -80,7 +84,6 @@ export default function App({ navigation, route }) {
       .then((linkedUserCredential) => {
         // const linkedUser = linkedUserCredential.user;
         // console.log("Tài khoản đã được liên kết thành công:", linkedUser);
-        // Tiếp tục với điều hướng hoặc logic khác của bạn
       })
       .catch((error) => {
         console.error("Lỗi khi liên kết tài khoản:", error);
@@ -99,6 +102,7 @@ export default function App({ navigation, route }) {
           name: name,
           number:phoneNumber,
           _id: result.user.uid,
+          avatar:'https://japans.vn/wp-content/uploads/2023/07/gai-xinh-1.jpg'
         };
         await axiosPrivate.post('/auth/register', dataUser);
       } catch (err) {
@@ -139,8 +143,8 @@ export default function App({ navigation, route }) {
           {") "}
           {route.params.SDT}{" "}
         </Text>
-        <Text style={{ fontSize: 16, marginTop: 10, fontWeight: 300 }}>
-          Vui lòng nhập mã xác thực{" "}
+        <Text style={{ fontSize: 16, marginTop: 10, fontWeight: 300, textAlign:'center' }}>
+          Vui lòng nhập mã xác thực{" "} có hiệu lực trong vòng 2 phút
         </Text>
         <View style={styles.verificationContainer}>
           <TextInput

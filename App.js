@@ -15,13 +15,14 @@ import MyTabs from "./components/BottomTab";
 import Conversations from "./components/Conversations";
 import Contact from "./components/Contacts";
 import SignupAuth from "./components/SignupAuth";
-import TestDK from "./components/TestDK";
 import Search from "./components/Search";
 import AddInfoUser from "./components/AddInfoUser";
 const Stack = createNativeStackNavigator();
 const AuthenticatedUserContext = createContext({});
 import { getAuth } from "firebase/auth";
 import SocketProvider from "./context/SocketProvider";
+import ForgetPassword from "./components/ForgetPassword.js";
+import UserInformation from "./components/UserInformation.js";
 
 // ...
 
@@ -31,9 +32,7 @@ const AuthenticatedUserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   return (
     <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-      <SocketProvider>
-        {children}
-      </SocketProvider>
+      <SocketProvider>{children}</SocketProvider>
     </AuthenticatedUserContext.Provider>
   );
 };
@@ -42,14 +41,14 @@ function ChatStack() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Stack.Navigator>
-      <Stack.Screen
-        name="AddInfoUser"
-        component={AddInfoUser}
-        options={{ headerShown: false }}
-      />
         <Stack.Screen
           name="MyTabs"
           component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddInfoUser"
+          component={AddInfoUser}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -57,16 +56,16 @@ function ChatStack() {
           component={Search}
           options={{ headerShown: false }}
         />
-        <Stack.Screen
-          name="TestDK"
-          component={TestDK}
-          options={{ headerShown: false }}
-        />
 
         <Stack.Screen
           name="Conversations"
           component={Conversations}
           options={{ headerShown: true }}
+        />
+        <Stack.Screen
+          name="UserInformation"
+          component={UserInformation}
+          options={{ headerShown: false }}
         />
       </Stack.Navigator>
     </SafeAreaView>
@@ -77,7 +76,6 @@ function AuthStack() {
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Stack.Navigator>
-       
         <Stack.Screen
           name="Home"
           component={Home}
@@ -109,13 +107,23 @@ function AuthStack() {
             },
           }}
         />
-
         <Stack.Screen
           name="Signup"
           component={Signup}
           options={{
             headerShown: true,
             title: "Tạo tài khoản",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+          }}
+        />
+        <Stack.Screen
+          name="ForgetPassword"
+          component={ForgetPassword}
+          options={{
+            headerShown: true,
+            title: "Lấy lại mật khẩu",
             headerStyle: {
               backgroundColor: "#00aaff",
             },
@@ -143,18 +151,6 @@ function AuthStack() {
             },
           }}
         />
-        <Stack.Screen
-          name="TestDK"
-          component={TestDK}
-          options={{
-            headerShown: true,
-            title: "test",
-            headerStyle: {
-              backgroundColor: "#00aaff",
-            },
-          }}
-        />
-         
       </Stack.Navigator>
     </SafeAreaView>
   );
