@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { View, TouchableOpacity, Text, Image, StyleSheet } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, Feather } from "@expo/vector-icons";
 import { AntDesign } from "@expo/vector-icons";
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation } from "@react-navigation/native";
 import axiosPrivate from "../api/axiosPrivate.js";
 import { useCurrentUser } from "../App";
+import Modal from "react-native-modal";
 
 export default function User() {
   const navigation = useNavigation();
@@ -15,7 +16,7 @@ export default function User() {
   }, []);
 
   useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
+    const unsubscribe = navigation.addListener("focus", () => {
       fetchUserData();
     });
 
@@ -24,9 +25,9 @@ export default function User() {
 
   const fetchUserData = async () => {
     try {
-        const uid = currentUser.user.uid;
-        const user = await axiosPrivate(`/user/${uid}`);
-        setUser(user);
+      const uid = currentUser.user.uid;
+      const user = await axiosPrivate(`/user/${uid}`);
+      setUser(user);
     } catch (error) {
       console.error("Error fetching user data: ", error);
     }
@@ -34,14 +35,22 @@ export default function User() {
   // conver ngày sinh từ mongo về dd/MM/yyyy
   function convertDateOfBirth(dateString) {
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   }
+  const [isModalVisibleAVT, setModalVisibleAVT] = useState(false);
+  const toggleModalAVT = () => {
+    setModalVisibleAVT(!isModalVisibleAVT);
+  };
+  const [isModalVisibleBia, setModalVisibleBia] = useState(false);
+  const toggleModalBia = () => {
+    setModalVisibleBia(!isModalVisibleBia);
+  };
   return (
     <View style={styles.container}>
-      <TouchableOpacity activeOpacity={0.95} style={styles.ViewAnhBia}>
+      <TouchableOpacity onPress={toggleModalBia} activeOpacity={0.95} style={styles.ViewAnhBia}>
         <Image
           source={require("../assets/hinh-2-597.jpg")}
           style={{ width: "100%", height: "100%" }}
@@ -53,7 +62,7 @@ export default function User() {
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
         <View style={styles.ViewAVTName}>
-          <TouchableOpacity activeOpacity={0.95}>
+          <TouchableOpacity onPress={toggleModalAVT} activeOpacity={0.95}>
             <Image
               source={{ uri: user?.avatar }}
               style={{ width: 54, height: 54, borderRadius: 50 }}
@@ -68,20 +77,30 @@ export default function User() {
         <View style={styles.Item}>
           <Text style={{ fontSize: 17 }}>Giới tính:</Text>
           <Text style={{ fontSize: 17, width: "70%" }}>
-          {user?.gender ? user?.gender=='male' ? 'Nam': user?.gender=='female'? 'Nữ':   user?.gender : "?"}
+            {user?.gender
+              ? user?.gender == "male"
+                ? "Nam"
+                : user?.gender == "female"
+                ? "Nữ"
+                : user?.gender
+              : "?"}
           </Text>
         </View>
         <View style={styles.Item}>
           <Text style={{ fontSize: 17 }}>Ngày sinh:</Text>
           <Text style={{ fontSize: 17, width: "70%" }}>
-            {user?.dateOfBirth ? convertDateOfBirth(user?.dateOfBirth) : "?"}</Text>
+            {user?.dateOfBirth ? convertDateOfBirth(user?.dateOfBirth) : "?"}
+          </Text>
         </View>
         <View style={[styles.Item, { borderBottomWidth: null, height: 53 }]}>
           <Text style={{ fontSize: 17 }}>Điện thoại:</Text>
           <View style={{ width: "70%", paddingTop: 20 }}>
-            <Text style={{ fontSize: 17 }}>{user?.number ? user?.number : "?"}</Text>
+            <Text style={{ fontSize: 17 }}>
+              {user?.number ? user?.number : "?"}
+            </Text>
             <Text style={{ fontSize: 14, color: "#767A7F" }}>
-              Số điện thoại chỉ hiển thị với người có lưu số bạn trong danh bạ máy
+              Số điện thoại chỉ hiển thị với người có lưu số bạn trong danh bạ
+              máy
             </Text>
           </View>
         </View>
@@ -108,6 +127,57 @@ export default function User() {
           </Text>
         </TouchableOpacity>
       </View>
+      <Modal
+        isVisible={isModalVisibleAVT}
+        onBackdropPress={toggleModalAVT}
+        style={styles.modal}
+        backdropOpacity={0.65}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropTransitionInTiming={600}
+        backdropTransitionOutTiming={600}
+        hideModalContentWhileAnimating={true}
+      >
+        <View style={styles.modalContent}>
+          <Text style={{ fontSize: 17, color: "#03316D", fontWeight: 500 }}>
+            Ảnh đại diện
+          </Text>
+          <TouchableOpacity style={styles.modalItem}>
+            <Feather name="camera" size={24} color="black" />
+            <Text style={styles.modalText}>Chọn ảnh từ thư viện</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalItem}>
+            <Feather name="image" size={24} color="black" />
+            <Text style={styles.modalText}>Chụp ảnh mới</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+      {/* Modal bìa */}
+      <Modal
+        isVisible={isModalVisibleBia}
+        onBackdropPress={toggleModalBia}
+        style={styles.modal}
+        backdropOpacity={0.65}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropTransitionInTiming={600}
+        backdropTransitionOutTiming={600}
+        hideModalContentWhileAnimating={true}
+      >
+        <View style={styles.modalContent}>
+          <Text style={{ fontSize: 17, color: "#03316D", fontWeight: 500 }}>
+            Ảnh bìa
+          </Text>
+          <TouchableOpacity style={styles.modalItem}>
+            <Feather name="camera" size={24} color="black" />
+            <Text style={styles.modalText}>Chọn ảnh từ thư viện</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalItem}>
+            <Feather name="image" size={24} color="black" />
+            <Text style={styles.modalText}>Chụp ảnh mới</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -150,5 +220,24 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderBottomWidth: 1,
     borderColor: "#B9BDC1",
+  },
+  modal: {
+    justifyContent: "flex-end",
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 22,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    gap: 12,
+  },
+  modalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
+  },
+  modalText: {
+    fontSize: 18,
   },
 });
