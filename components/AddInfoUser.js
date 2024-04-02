@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext,useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -14,13 +14,31 @@ import LottieView from "lottie-react-native";
 import { format, parse } from "date-fns";
 import * as ImagePicker from "expo-image-picker";
 import axiosPrivate from "../api/axiosPrivate";
-import { AuthenticatedUserContext } from "../App.js";
+import { useCurrentUser } from "../App";
+
 export default function User({ navigation, route }) {
   const [isClickAVT, setIsClickAVT] = useState("male");
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [showDatePicker, setShowDatePicker] = useState(false);
-  const { user } = useContext(AuthenticatedUserContext);
-
+  const [user, setUser] = useState(null);
+  const currentUser = useCurrentUser();
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+  const fetchUserData = async () => {
+    try {
+        const uid = currentUser.user.uid;
+        const user = await axiosPrivate(`/user/${uid}`);
+        setUser(user);
+        setImage(user.avatar)
+        if (user.dateOfBirth) {
+          const dateOfBirth = new Date(user.dateOfBirth);
+          setSelectedDate(dateOfBirth);
+        }
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+    }
+  };
   //hàm xử lý khi thay đổi ngày tháng năm
   const handleDateChange = (event, date) => {
     setShowDatePicker(false);
@@ -53,25 +71,33 @@ export default function User({ navigation, route }) {
   };
   const HoanThanh = async () => {
     const dateObject = parse(formattedDate, "dd/MM/yyyy", new Date());
+    console.log("object", dateObject)
     // Chuyển đối tượng Date thành chuỗi định dạng MongoDB
     const formattedDateForMongoDB = format(
       dateObject,
       "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"
     );
-
     const UpdateUserData = {
       dateOfBirth: formattedDateForMongoDB,
       gender: isClickAVT,
       avatar: image
         ? image
-        : "https://images.pexels.com/photos/14940646/pexels-photo-14940646.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1",
+        : user?.avatar,
     };
-    await axiosPrivate.patch(`/user/${user.uid}`, UpdateUserData);
-    navigation.navigate("MyTabs");
+    await axiosPrivate.patch(`/user/${user._id}`, UpdateUserData);
+    navigation.goBack();
   };
   return (
     <View style={styles.container}>
       <View style={styles.ViewTop}>
+      <TouchableOpacity
+          onPress={() => {
+            navigation.goBack();
+          }}
+          
+        >
+          <Ionicons name="arrow-back" size={28} color="white" />
+        </TouchableOpacity>
         <Text style={{ color: "white", fontWeight: "600", fontSize: 19 }}>
           Ngày sinh và giới tính
         </Text>
@@ -82,7 +108,7 @@ export default function User({ navigation, route }) {
         </Text>
         <Image
           style={{ width: 130, height: 130, borderRadius: 100 }}
-          source={image ? { uri: image } : require("../assets/AVT_Default.jpg")}
+          source={{ uri: image }}
         />
         <TouchableOpacity onPress={pickImage}>
           <Text style={{ fontSize: 18, fontWeight: "500", color: "#006AF5" }}>
@@ -204,11 +230,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   ViewTop: {
+    flexDirection: "row",
     width: "100%",
     height: 50,
     backgroundColor: "#006AF5",
-    justifyContent: "center",
+    alignItems: "center",
     paddingLeft: 15,
+    gap: 10,
   },
   ViewAVT: {
     width: "100%",

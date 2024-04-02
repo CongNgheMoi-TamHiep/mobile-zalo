@@ -1,4 +1,4 @@
-import React, { useEffect, useState,useContext } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import {
   StyleSheet,
   Text,
@@ -16,6 +16,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { AuthenticatedUserContext } from "../App.js";
 
 import * as Contacts from "expo-contacts";
+import { set } from "date-fns";
 const Tab = createMaterialTopTabNavigator();
 //hàm cắt tên quá dài
 function FormatTenQuaDai(text, maxLength) {
@@ -25,14 +26,13 @@ function FormatTenQuaDai(text, maxLength) {
 }
 
 function BanBe() {
-const { user } = useContext(AuthenticatedUserContext);
-// console.log(user);
+  const { user } = useContext(AuthenticatedUserContext);
   const [users, setUsers] = useState([]);
   useEffect(() => {
     (async () => {
       const users = await axiosPrivate("/user");
       // lọc ra những người dùng không phải là mình
-      const new_User = users.filter((item) => item.number !== user.phoneNumber);      
+      const new_User = users.filter((item) => item.number !== user.phoneNumber);
       setUsers(new_User);
     })();
   }, []);
@@ -143,12 +143,37 @@ const { user } = useContext(AuthenticatedUserContext);
 }
 
 function DanhBaMay() {
-  const [isKetBan, setIsKetBan] = useState(false);
   const [contacts, setContacts] = useState([]);
   function FormatTenQuaDai(text, maxLength) {
     return text.length > maxLength
       ? text.substring(0, maxLength - 3) + "..."
       : text;
+  }
+  // lấy chủ tài khoản
+  const { user } = useContext(AuthenticatedUserContext);
+  //Lấy danh sách bạn bè
+  const [users, setUsers] = useState([]);
+  const [phonebook, setPhonebook] = useState([]);
+  useEffect(() => {
+    (async () => {
+      const users = await axiosPrivate("/user");
+      // lấy friends của user hiện hành
+      const friends = await axiosPrivate(`/friends/${user.uid}`);
+      setPhonebook(friends.phoneBook);
+      setUsers(users);
+    })();
+  }, []);
+  //hàm kiểm tra xem sdt đó có đang dùng zalo không
+  function isCoDungZL(sdt) {
+    const isCoDungZL = users.find((user) => {
+      let number = "0" + user.number.slice(3);
+      return number === sdt;
+    });
+    if (isCoDungZL) {
+      return true;
+    } else {
+      return false;
+    }
   }
   useFocusEffect(
     React.useCallback(() => {
@@ -163,50 +188,63 @@ function DanhBaMay() {
         }
       };
       fetchContacts();
+
       // Cleanup function, sẽ được gọi khi tab không còn được chọn
       return () => {
         // Thực hiện các công việc cleanup nếu cần
       };
     }, [])
   );
-  // console.log(contacts);
+  // format danh bạ máy về dạng mảng object {nameDanhBa, number}
+  const formatContacts = contacts.map((v) => {
+    return {
+      nameDanhBa: v.name,
+      number: v.phoneNumbers[0].number,
+    };
+  });
+  // kiểm tra trên database có phonebook không, nếu không có thì lấy danh bạ máy, nếu có thì lấy phonebook
+  const phonebook1 = phonebook.length != 0 ? phonebook : formatContacts;
+
+  // lọc ra những người có sdt và lọc ra những người trong danh bạ có đang dùng zalo
+  const NguoiDungCoZola = phonebook1.filter((item) => {
+    return item.number.length > 0 && isCoDungZL(item.number);
+  });
+  
   // Sắp xếp danh sách conTacst theo tên (name)
-  const sortedData = contacts
+
+  const sortedData = NguoiDungCoZola
     .slice()
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .sort((a, b) => a.nameDanhBa.localeCompare(b.nameDanhBa));
 
   // Tạo một đối tượng để nhóm các tên theo chữ cái
   const groupedData = {};
   sortedData.forEach((item) => {
-    const firstChar = item.name.charAt(0).toUpperCase();
+    const firstChar = item.nameDanhBa.charAt(0).toUpperCase();
     if (!groupedData[firstChar]) {
       groupedData[firstChar] = [];
     }
     groupedData[firstChar].push(item);
   });
-  //Lấy danh sách bạn bè
-  const [users, setUsers] = useState([]);
-  useEffect(() => {
-    (async () => {
-      const users = await axiosPrivate("/user");
-      setUsers(users);
-    })();
-  }, []);
-  // console.log(users);
-  //hàm kiểm tra xem sdt đó có đang dùng zalo không
-  function isCoDungZL(sdt) {
-    const isCoDungZL = users.find((user) => {
-      let number = "0" + user.number.slice(3);
-      return number === sdt;
-    });
-    if (isCoDungZL) {
-      return true;
-    } else {
-      return false;
-    }
-  }
+
   return (
     <View style={styles.container}>
+      <View
+        style={{
+          width: "100%",
+          height: 50,
+          flexDirection: "row",
+          alignItems: "center",
+        }}
+      >
+        <Text style={{ fontSize: 16, fontWeight: "500", padding: 10 }}>
+          Lần cập nhật danh bạ gần nhất
+        </Text>
+        <TouchableOpacity style={{}}>
+          <Text style={{ fontSize: 16, fontWeight: "500", color: "#00aaff" }}>
+            Cập nhật
+          </Text>
+        </TouchableOpacity>
+      </View>
       <ScrollView>
         <View style={{ width: "100%", height: 8, backgroundColor: "#ccc" }} />
 
@@ -234,35 +272,36 @@ function DanhBaMay() {
                       borderRadius: 50 / 2,
                       marginRight: 15,
                     }}
-                    //thiếu kiểm tra kết bạn hay chưa
-                    source={
-                      isCoDungZL(item.phoneNumbers[0].number)
-                        ? require("../assets/chuaketban.png")
-                        : require("../assets/khongcoZL.png")
-                    }
+                    source={{
+                      uri: users.find(
+                        (user) => "0" + user.number.slice(3) === item.number
+                      )?.avatar,
+                    }}
                   />
+
                   <View>
                     <Text style={{ fontSize: 19, fontWeight: "400" }}>
-                      {FormatTenQuaDai(item.name, 19)}
+                      {FormatTenQuaDai(item.nameDanhBa, 19)}
                     </Text>
                     <Text
                       style={{
                         fontSize: 17,
                         fontWeight: "400",
-                        color: isCoDungZL(item.phoneNumbers[0].number)
-                          ? "#767A7F"
-                          : "#CD5C5C",
+                        color: "#767A7F",
                       }}
                     >
-                      {isCoDungZL(item.phoneNumbers[0].number)
-                        ? "Tên Zola: " + FormatTenQuaDai(item.name, 19)
-                        : "Chưa đăng ký"}
+                      Tên zola:{" "}
+                      {
+                        users.find(
+                          (user) => "0" + user.number.slice(3) === item.number
+                        )?.name
+                      }
                     </Text>
                   </View>
                 </View>
 
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  {isCoDungZL(item.phoneNumbers[0].number) ? (
+                  {isCoDungZL(item.number) ? (
                     <TouchableOpacity
                       style={{
                         width: 79,
@@ -301,7 +340,7 @@ function DanhBaMay() {
                           color: "#006AF5",
                         }}
                       >
-                        Mời 
+                        Mời
                       </Text>
                     </TouchableOpacity>
                   )}

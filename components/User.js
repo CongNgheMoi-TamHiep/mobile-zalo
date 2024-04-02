@@ -12,18 +12,43 @@ import {
   import { SimpleLineIcons, Entypo, AntDesign } from "@expo/vector-icons";
   import { getAuth, signOut } from "firebase/auth";
   import { MaterialCommunityIcons } from "@expo/vector-icons";
-  import { AuthenticatedUserContext } from "../App.js";
-  // ...
-  
+  import { useCurrentUser } from "../App";
+  import { useNavigation } from '@react-navigation/native';
+import axiosPrivate from "../api/axiosPrivate.js";
   const auth = getAuth();
-  
   export default function User() {
-    const { user } = useContext(AuthenticatedUserContext);
-    console.log("object", user)
+    const navigation = useNavigation();
+  const [user, setUser] = useState(null);
+  // lấy thông tin user hiện tại từ context
+  const currentUser = useCurrentUser();
+  // lấy thông tin user từ api
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      fetchUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const fetchUserData = async () => {
+    try {
+        const uid = currentUser.user.uid;
+        const user = await axiosPrivate(`/user/${uid}`);
+        setUser(user);
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+    }
+  };
+    
     return (
       <View style={styles.container}>
         <View style={styles.ViewTop}>
           <TouchableOpacity
+          onPress={() => navigation.navigate("UserInformation")}
             style={{
               width: "100%",
               height: "100%",
@@ -34,11 +59,11 @@ import {
           >
             <View style={{ flexDirection: "row", gap: 8 }}>
               <Image
-                source={require("../assets/AVT_Default.jpg")}
+                source={{ uri: user?.avatar }}
                 style={{ width: 50, height: 50, borderRadius: 50 }}
               />
               <View>
-                <Text style={{ fontSize: 18 }}>Nguyễn Văn A</Text>
+                <Text style={{ fontSize: 18 }}>{user?.name}</Text>
                 <Text style={{ fontSize: 15 }}>Xem trang cá nhân </Text>
               </View>
             </View>
@@ -138,9 +163,9 @@ import {
               </TouchableOpacity>
             </View>
           </TouchableOpacity>
-          <Text>User screens</Text>
-          <Button title=" đăng xuất tạm" onPress={() => signOut(auth)} />
         </View>
+        <Button title=" đăng xuất" onPress={() => signOut(auth)} />
+
       </View>
     );
   }
@@ -149,7 +174,7 @@ import {
     container: {
       flex: 1,
       alignItems: "center",
-      backgroundColor: "#B9BDC1",
+      backgroundColor: "#D6D9DC",
       gap: 10,
     },
     ViewTop: {
@@ -161,7 +186,7 @@ import {
     },
     ViewBottom: {
       width: "100%",
-      height: "80%",
+      height: "75%",
       padding: 12,
       backgroundColor: "#E9EBED",
       alignItems: "center",

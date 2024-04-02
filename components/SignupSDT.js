@@ -13,19 +13,6 @@ import axiosPrivate from "../api/axiosPrivate.js";
 import axios from "axios";
 
 export default function App({ navigation, route }) {
-  useEffect(() => {
-    (async () => {
-      try {
-        const phoneNumber = "+84333900858";
-        const response = await axiosPrivate(
-          `/check/number/${phoneNumber}`
-        );
-        console.log("Response from /check/number:", response);
-      } catch (error) {
-        console.error("Error while checking phone number:", error);
-      }
-    })();
-  }, []);
 
   const [SDT, setSDT] = useState("");
   const [password, setPassword] = useState("");
@@ -55,39 +42,45 @@ export default function App({ navigation, route }) {
   const handleCountryChange = (country) => {
     setCountryCode(country.cca2);
     setCallingCode("+" + country.callingCode.join(""));
-    // Thực hiện bất kỳ điều gì khác khi chọn quốc gia
   };
-  // console.log(callingCode);
+
   const [errorSDT, setErrorSDT] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
-  function handelTaoSDT() {
-    // console.log("countryCode"+countryCode);
-
+  async function handelTaoSDT() {
+    //kiểm tra sdt đúng quốc gia chưa
     const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
     if (phoneNumber) {
-      const formattedSDT = SDT.replace(/^0+/, "");
       //loại bỏ số 0 ở đầu số điện thoại
-      if (password.length >= 6) {
-        setErrorSDT("");
-        setErrorPassword("");
-        navigation.navigate("SignupAuth", {
-          SDT: formattedSDT,
-          callingCode: callingCode,
-          name: route.params.name,
-          password: password,
-        });
+      const formattedSDT = SDT.replace(/^0+/, "");
+      // kiểm tra số điện thoại đã tồn tại chưa định dạng callingCode + SDT
+      const PhoneNumberIsExist = callingCode + formattedSDT;
+
+      const response = await axiosPrivate(
+        `/check/number/${PhoneNumberIsExist}`
+      );
+      if (!response.numberExists) {
+        if (password.length >= 6) {
+          setErrorSDT("");
+          setErrorPassword("");
+          navigation.navigate("SignupAuth", {
+            SDT: formattedSDT,
+            callingCode: callingCode,
+            name: route.params.name,
+            password: password,
+          });
+        } else {
+          setErrorSDT("");
+          setErrorPassword("Mật khẩu phải có ít nhất 6 ký tự");
+        }
       } else {
-        setErrorSDT("");
-        setErrorPassword("Mật khẩu phải có ít nhất 6 ký tự");
+        setErrorPassword("");
+        setErrorSDT("Số điện thoại đã tồn tại");
       }
     } else {
       setErrorPassword("");
       setErrorSDT("Số điện thoại không hợp lệ cho quốc gia đã chọn");
     }
   }
-  // useEffect(() => {
-  //   console.log(countryCode);
-  // }, [countryCode]);
   return (
     <View style={styles.container}>
       <View style={styles.ViewTop}>
@@ -112,9 +105,7 @@ export default function App({ navigation, route }) {
             onSelect={handleCountryChange}
             countryCode={countryCode}
           />
-          {/* <Text style={{marginTop:10,fontSize:16  }}> */}
-          {/* {'(+'}{callingCode}{") "} */}
-          {/* </Text> */}
+        
           <TextInput
             style={styles.input}
             placeholder="Nhập số điện thoại"

@@ -122,18 +122,22 @@ export default function App({ navigation }) {
         </View>
       </View>
       <Text
-        style={{ fontSize: 18, color: "red", marginTop: 35, marginLeft: 17 }}
+        style={{ fontSize: 18, color: "red", marginTop: 18, marginLeft: 17 }}
       >
         {errorMessage}
       </Text>
-      <TouchableOpacity style={styles.button}>
+      <TouchableOpacity
+      onPress={() => {
+        navigation.navigate("ForgetPassword");
+      } }
+      style={styles.button}>
         <Text
           style={{
             fontWeight: "bold",
             color: "#006AF5",
             fontSize: 18,
             paddingLeft: 17,
-            marginTop: 18,
+            marginTop: 10,
           }}
         >
           {" "}
