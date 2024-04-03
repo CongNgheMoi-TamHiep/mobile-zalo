@@ -102,7 +102,7 @@ export default function App({ navigation, route }) {
           name: name,
           number:phoneNumber,
           _id: result.user.uid,
-          avatar:'https://japans.vn/wp-content/uploads/2023/07/gai-xinh-1.jpg'
+          avatar:'https://firebasestorage.googleapis.com/v0/b/zalo-78227.appspot.com/o/avatarDefault.jpg?alt=media&token=2b2922bb-ada3-4000-b5f7-6d97ff87becd'
         };
         await axiosPrivate.post('/auth/register', dataUser);
       } catch (err) {
