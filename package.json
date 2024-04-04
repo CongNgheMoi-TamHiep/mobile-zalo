@@ -29,7 +29,7 @@
     "expo-contacts": "^12.8.2",
     "expo-firebase-core": "^6.0.0",
     "expo-firebase-recaptcha": "^2.3.1",
-    "expo-image-picker": "~14.3.2",
+    "expo-image-picker": "^14.7.1",
     "expo-status-bar": "~1.6.0",
     "firebase": "^10.7.1",
     "libphonenumber-js": "^1.10.53",

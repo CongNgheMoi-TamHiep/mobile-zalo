@@ -12,26 +12,69 @@ import { firebaseConfig } from "../config/firebase.js";
 import firebase from "firebase/compat/app";
 import CountryPicker from "react-native-country-picker-modal";
 import PhoneNumber from "libphonenumber-js";
+import axiosPrivate from "../api/axiosPrivate.js";
+
 export default function App({ navigation }) {
+  const [matKhauMoi, setMatKhauMoi] = useState("");
+  const [xacNhanMatKhau, setXacNhanMatKhau] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [sdt, setsdt] = useState("");
+  const [isFieldsFilled, setIsFieldsFilled] = useState(false);
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+  useEffect(() => {
+    if (
+      matKhauMoi.length != 0 &&
+      xacNhanMatKhau.length != 0 &&
+      sdt.length != 0
+    ) {
+      setIsFieldsFilled(true);
+    } else {
+      setIsFieldsFilled(false);
+    }
+  }, [matKhauMoi.length, xacNhanMatKhau.length, sdt.length]);
+
   const [errorMessage, setErrorMessage] = useState("");
   const [isFocusedSdt, setIsFocusedSdt] = useState(false);
   // chọn quốc gia
-  useEffect(() => {
-    setIsFieldsFilled(sdt !== "");
-  }, [sdt]);
-  const [isFieldsFilled, setIsFieldsFilled] = useState(false);
   const [countryCode, setCountryCode] = useState("VN");
   const [callingCode, setCallingCode] = useState("+84");
   const handleCountryChange = (country) => {
     setCountryCode(country.cca2);
     setCallingCode("+" + country.callingCode.join(""));
   };
-  function TiepTuc() {
+  async function TiepTuc() {
     const phoneNumber = PhoneNumber.isPossibleNumber(sdt, countryCode);
     if (phoneNumber) {
+      // bỏ số 0 ở đầu số điện thoại
       const formattedSDT = sdt.replace(/^0+/, "");
-      navigation.navigate("ForgetPasswordOTP", { sdt: formattedSDT });
+      // định dạng callingCode + SDT
+      const PhoneNumberIsExist = callingCode + formattedSDT;
+      // kiểm tra số điện thoại đã tồn tại chưa định dạng
+      const response = await axiosPrivate(
+        `/check/number/${PhoneNumberIsExist}`
+      );
+      if (response.numberExists) {
+        if (matKhauMoi.length >= 6) {
+          if (matKhauMoi === xacNhanMatKhau) {
+            navigation.navigate("ForgetPasswordOTP", {
+              callingCode: callingCode,
+              SDT: formattedSDT,
+              mkMoi: matKhauMoi,
+            });
+            console.log("ok");
+            setErrorMessage("");
+          } else {
+            setErrorMessage("Mật khẩu không khớp");
+          }
+        } else {
+          // đoạn này thêm regex để kiểm tra mật khẩu
+          setErrorMessage("Mật khẩu phải có ít nhất 6 ký tự");
+        }
+      } else {
+        setErrorMessage("Số điện thoại chưa sử dụng Zola");
+      }
     } else {
       setErrorMessage("Số điện thoại không hợp lệ cho quốc gia đã chọn");
     }
@@ -72,10 +115,53 @@ export default function App({ navigation }) {
             onChangeText={(text) => setsdt(text)}
           />
         </View>
+        
+        <View
+          style={{
+            width: "90%",
+            height: 30,
+            marginTop:5,
+            flexDirection: "row",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text style={{ fontSize: 17, fontWeight: "500", color: "#0250B6" }}>
+          Mật khẩu mới:<Text style={{ color: "red" }}> *</Text>
+          </Text>
+          <TouchableOpacity onPress={togglePasswordVisibility}>
+            <Text style={{ fontSize: 17, color: "#767A7F" }}>
+              {showPassword ? "Ẩn" : "Hiện"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <TextInput
+          style={[
+            styles.input,
+            { borderBottomColor: "gray", borderBottomWidth: 1 },
+          ]}
+          placeholder="Nhập mật khẩu mới"
+          placeholderTextColor="#635b5b"
+          value={matKhauMoi}
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          onChangeText={(text) => setMatKhauMoi(text)}
+        />
+
+        <TextInput
+          style={[
+            styles.input,
+            { borderBottomColor: "gray", borderBottomWidth: 1 },
+          ]}
+          placeholder="Nhập lại mật khẩu mới"
+          placeholderTextColor="#635b5b"
+          value={xacNhanMatKhau}
+          secureTextEntry={!showPassword}
+          autoCapitalize="none"
+          onChangeText={(text) => setXacNhanMatKhau(text)}
+        />
       </View>
-      <Text
-        style={{ fontSize: 18, color: "red", marginLeft: 17 }}
-      >
+
+      <Text style={{ fontSize: 18, color: "red", marginLeft: 17 }}>
         {errorMessage}
       </Text>
       <View
@@ -121,7 +207,7 @@ const styles = StyleSheet.create({
   },
   ViewInput: {
     width: "100%",
-    height: 70,
+    height: 175,
     justifyContent: "center",
     alignItems: "center",
   },
@@ -132,7 +218,7 @@ const styles = StyleSheet.create({
   },
   input: {
     width: "90%",
-    height: 50,
+    height: 40,
     fontSize: 19,
   },
   ViewBottom: {

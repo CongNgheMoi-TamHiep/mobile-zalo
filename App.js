@@ -24,6 +24,7 @@ import SocketProvider from "./context/SocketProvider";
 import ForgetPassword from "./components/ForgetPassword.js";
 import UserInformation from "./components/UserInformation.js";
 import ChangePassword from "./components/ChangePassword.js";
+import ForgetPasswordOTP from "./components/ForgetPasswordOTP.js";
 // ...
 
 const auth = getAuth();
@@ -141,6 +142,18 @@ function AuthStack() {
             },
           }}
         />
+         <Stack.Screen
+          name="ForgetPasswordOTP"
+          component={ForgetPasswordOTP}
+          options={{
+            headerShown: true,
+            title: "Nhập mã xác thực",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+          }}
+        />
+       
         <Stack.Screen
           name="SignupSDT"
           component={SignupSDT}

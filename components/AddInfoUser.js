@@ -1,4 +1,4 @@
-import React, { useState, useContext,useEffect } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import {
   StyleSheet,
   Text,
@@ -27,14 +27,14 @@ export default function User({ navigation, route }) {
   }, []);
   const fetchUserData = async () => {
     try {
-        const uid = currentUser.user.uid;
-        const user = await axiosPrivate(`/user/${uid}`);
-        setUser(user);
-        setImage(user.avatar)
-        if (user.dateOfBirth) {
-          const dateOfBirth = new Date(user.dateOfBirth);
-          setSelectedDate(dateOfBirth);
-        }
+      const uid = currentUser.user.uid;
+      const user = await axiosPrivate(`/user/${uid}`);
+      setUser(user);
+      setImage(user.avatar);
+      if (user.dateOfBirth) {
+        const dateOfBirth = new Date(user.dateOfBirth);
+        setSelectedDate(dateOfBirth);
+      }
     } catch (error) {
       console.error("Error fetching user data: ", error);
     }
@@ -55,6 +55,7 @@ export default function User({ navigation, route }) {
   //hàm xử lý khi chọn ảnh đại diện
   const [image, setImage] = React.useState(null);
   const [Type, setType] = React.useState("");
+  const [formData, setFormData] = React.useState(null);
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -62,16 +63,35 @@ export default function User({ navigation, route }) {
       aspect: [4, 4],
       quality: 1,
     });
-    // console.log(result);
-    if (!result.cancelled) {
-      // extract the filetype
-      setType(result.uri.substring(result.uri.lastIndexOf(".") + 1));
-      setImage(result.uri);
+    if (result.cancelled) {
+      return;
     }
+    let localUri = result.uri;
+    let filename = localUri.split("/").pop();
+    let match = /\.(\w+)$/.exec(filename);
+    let type = match ? `image/${match[1]}` : `image`;
+
+    const formData2 = new FormData();
+    formData2.append("file", {
+      uri: localUri,
+      name: filename,
+      type: "image/png",
+    });
+    console.log("formData2", formData2._parts[0][1]);
+    setType(result.uri.substring(result.uri.lastIndexOf(".") + 1));
+    setImage(result.uri);
+    // return await fetch("http://example.com/upload.php", {
+    //   method: "POST",
+    //   body: formData,
+    //   header: {
+    //     "content-type": "multipart/form-data",
+    //   },
+    // });
+    setFormData(formData2);
   };
+
   const HoanThanh = async () => {
     const dateObject = parse(formattedDate, "dd/MM/yyyy", new Date());
-    console.log("object", dateObject)
     // Chuyển đối tượng Date thành chuỗi định dạng MongoDB
     const formattedDateForMongoDB = format(
       dateObject,
@@ -80,21 +100,26 @@ export default function User({ navigation, route }) {
     const UpdateUserData = {
       dateOfBirth: formattedDateForMongoDB,
       gender: isClickAVT,
-      avatar: image
-        ? image
-        : user?.avatar,
+      // avatar: image ? image : user?.avatar,
     };
     await axiosPrivate.patch(`/user/${user._id}`, UpdateUserData);
+    if (formData) {
+      await axiosPrivate.patch(`/user/${user._id}/updateAvatar`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Accept: 'application/json',
+        },
+      });
+    }
     navigation.goBack();
   };
   return (
     <View style={styles.container}>
       <View style={styles.ViewTop}>
-      <TouchableOpacity
+        <TouchableOpacity
           onPress={() => {
             navigation.goBack();
           }}
-          
         >
           <Ionicons name="arrow-back" size={28} color="white" />
         </TouchableOpacity>
@@ -176,7 +201,8 @@ export default function User({ navigation, route }) {
                 width: 25,
                 height: 25,
                 borderRadius: 50,
-                backgroundColor: isClickAVT === "female" ? "#006AF5" : "#B9BDC1",
+                backgroundColor:
+                  isClickAVT === "female" ? "#006AF5" : "#B9BDC1",
               }}
             >
               {isClickAVT === "female" && (
