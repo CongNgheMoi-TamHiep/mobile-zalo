@@ -6,6 +6,8 @@ import { useNavigation } from "@react-navigation/native";
 import axiosPrivate from "../api/axiosPrivate.js";
 import { useCurrentUser } from "../App";
 import Modal from "react-native-modal";
+import * as ImagePicker from "expo-image-picker";
+import { set } from "date-fns";
 
 export default function User() {
   const navigation = useNavigation();
@@ -48,9 +50,57 @@ export default function User() {
   const toggleModalBia = () => {
     setModalVisibleBia(!isModalVisibleBia);
   };
+
+  // chọn ảnh avatar từ thư viện
+  async function HandelChonAVTTuThuVien() {
+    toggleModalAVT();
+    await pickImage();
+  }
+  // chọn ảnh avatar mới
+  function HandelChonAVTNew() {
+    console.log("Chụp ảnh mới");
+  }
+  const [formData, setFormData] = React.useState(null);
+  // hàm chọn ảnh từ thư viện
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 4],
+      quality: 1,
+    });
+    if (result.cancelled) {
+      return;
+    }
+    let localUri = result.uri;
+    let filename = localUri.split("/").pop();
+    let match = /\.(\w+)$/.exec(filename);
+    let type = match ? `image/${match[1]}` : `image`;
+
+    const formData2 = new FormData();
+    formData2.append("file", {
+      uri: localUri,
+      name: filename,
+      type: "image/png",
+    });
+    if (formData2) {
+      await axiosPrivate.patch(`/user/${user._id}/updateAvatar`, formData2, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+          Accept: "application/json",
+        },
+      });
+      await fetchUserData();
+      console.log("ok");
+    }
+  };
   return (
     <View style={styles.container}>
-      <TouchableOpacity onPress={toggleModalBia} activeOpacity={0.95} style={styles.ViewAnhBia}>
+      <TouchableOpacity
+        onPress={toggleModalBia}
+        activeOpacity={0.95}
+        style={styles.ViewAnhBia}
+      >
         <Image
           source={require("../assets/hinh-2-597.jpg")}
           style={{ width: "100%", height: "100%" }}
@@ -142,12 +192,15 @@ export default function User() {
           <Text style={{ fontSize: 17, color: "#03316D", fontWeight: 500 }}>
             Ảnh đại diện
           </Text>
-          <TouchableOpacity style={styles.modalItem}>
-            <Feather name="camera" size={24} color="black" />
+          <TouchableOpacity
+            onPress={HandelChonAVTTuThuVien}
+            style={styles.modalItem}
+          >
+            <Feather name="image" size={24} color="black" />
             <Text style={styles.modalText}>Chọn ảnh từ thư viện</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.modalItem}>
-            <Feather name="image" size={24} color="black" />
+          <TouchableOpacity onPress={HandelChonAVTNew} style={styles.modalItem}>
+            <Feather name="camera" size={24} color="black" />
             <Text style={styles.modalText}>Chụp ảnh mới</Text>
           </TouchableOpacity>
         </View>
@@ -169,11 +222,11 @@ export default function User() {
             Ảnh bìa
           </Text>
           <TouchableOpacity style={styles.modalItem}>
-            <Feather name="camera" size={24} color="black" />
+            <Feather name="image" size={24} color="black" />
             <Text style={styles.modalText}>Chọn ảnh từ thư viện</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.modalItem}>
-            <Feather name="image" size={24} color="black" />
+            <Feather name="camera" size={24} color="black" />
             <Text style={styles.modalText}>Chụp ảnh mới</Text>
           </TouchableOpacity>
         </View>
