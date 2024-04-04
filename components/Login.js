@@ -128,7 +128,7 @@ export default function App({ navigation }) {
       </Text>
       <TouchableOpacity
       onPress={() => {
-        navigation.navigate("ForgetPassword");
+        navigation.navigate("ForgetPassword",{sdt:sdt});
       } }
       style={styles.button}>
         <Text

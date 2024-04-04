@@ -22,7 +22,7 @@ export default function App({navigation}) {
   };
   function handelTaoTen() {
     // Kiểm tra xem tên có đúng định dạng không
-    const nameRegex = /^[a-zA-Z]+(?: [a-zA-Z]+)*$/;
+    const nameRegex = /^[àáãạảăắằẳẵặâấầẩẫậèéẹẻẽêềếểễệđìíĩỉịòóõọỏôốồổỗộơớờởỡợùúũụủưứừửữựỳỵỷỹýÀÁÃẠẢĂẮẰẲẴẶÂẤẦẨẪẬÈÉẸẺẼÊỀẾỂỄỆĐÌÍĨỈỊÒÓÕỌỎÔỐỒỔỖỘƠỚỜỞỠỢÙÚŨỤỦƯỨỪỬỮỰỲỴỶỸÝa-zA-Z\s]{0,100}$/;
 
     if (nameRegex.test(name.trim())) {
         // Chuyển chữ cái đầu tiên sau dấu cách thành chữ in hoa

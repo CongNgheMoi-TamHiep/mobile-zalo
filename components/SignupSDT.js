@@ -13,7 +13,6 @@ import axiosPrivate from "../api/axiosPrivate.js";
 import axios from "axios";
 
 export default function App({ navigation, route }) {
-
   const [SDT, setSDT] = useState("");
   const [password, setPassword] = useState("");
   const [isSecureEntry, setIsSecureEntry] = useState(true);
@@ -47,6 +46,8 @@ export default function App({ navigation, route }) {
   const [errorSDT, setErrorSDT] = useState("");
   const [errorPassword, setErrorPassword] = useState("");
   async function handelTaoSDT() {
+    const regexSDT =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/])[A-Za-z\d!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/]{8,}$/;
     //kiểm tra sdt đúng quốc gia chưa
     const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
     if (phoneNumber) {
@@ -58,19 +59,26 @@ export default function App({ navigation, route }) {
       const response = await axiosPrivate(
         `/check/number/${PhoneNumberIsExist}`
       );
+
       if (!response.numberExists) {
-        if (password.length >= 6) {
-          setErrorSDT("");
-          setErrorPassword("");
-          navigation.navigate("SignupAuth", {
-            SDT: formattedSDT,
-            callingCode: callingCode,
-            name: route.params.name,
-            password: password,
-          });
+        if (password.length >= 8) {
+          if (regexSDT.test(password)) {
+            setErrorSDT("");
+            setErrorPassword("");
+            navigation.navigate("SignupAuth", {
+              SDT: formattedSDT,
+              callingCode: callingCode,
+              name: route.params.name,
+              password: password,
+            });
+          }
+          else{
+            setErrorSDT("");
+            setErrorPassword("Mật khẩu phải chứa ít nhất 1 chữ hoa 1 chữ thường 1 số");
+          }
         } else {
           setErrorSDT("");
-          setErrorPassword("Mật khẩu phải có ít nhất 6 ký tự");
+          setErrorPassword("Mật khẩu phải có ít nhất 8 ký tự");
         }
       } else {
         setErrorPassword("");
@@ -84,7 +92,7 @@ export default function App({ navigation, route }) {
   return (
     <View style={styles.container}>
       <View style={styles.ViewTop}>
-        <Text>Vui lòng nhập số điện thoại và mật khẩu để đăng nhập</Text>
+        <Text>Vui lòng nhập số điện thoại và mật khẩu để đăng ký</Text>
       </View>
       <View style={styles.ViewBottom}>
         <View
@@ -105,7 +113,7 @@ export default function App({ navigation, route }) {
             onSelect={handleCountryChange}
             countryCode={countryCode}
           />
-        
+
           <TextInput
             style={styles.input}
             placeholder="Nhập số điện thoại"
@@ -178,7 +186,7 @@ export default function App({ navigation, route }) {
           <TouchableOpacity>
             <Text style={{ color: "blue", fontSize: 17 }}>
               {" "}
-              điều khoản sử dụng Zalo
+              điều khoản sử dụng Zola
             </Text>
           </TouchableOpacity>
         </View>

@@ -57,7 +57,7 @@ export default function User({ navigation, route }) {
   const [Type, setType] = React.useState("");
   const [formData, setFormData] = React.useState(null);
   const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    let result = await ImagePicker.launchCameraAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 4],
@@ -75,18 +75,12 @@ export default function User({ navigation, route }) {
     formData2.append("file", {
       uri: localUri,
       name: filename,
-      type: "image/png",
+      type : 'image/png'
     });
     console.log("formData2", formData2._parts[0][1]);
+  
     setType(result.uri.substring(result.uri.lastIndexOf(".") + 1));
     setImage(result.uri);
-    // return await fetch("http://example.com/upload.php", {
-    //   method: "POST",
-    //   body: formData,
-    //   header: {
-    //     "content-type": "multipart/form-data",
-    //   },
-    // });
     setFormData(formData2);
   };
 
@@ -104,6 +98,7 @@ export default function User({ navigation, route }) {
     };
     await axiosPrivate.patch(`/user/${user._id}`, UpdateUserData);
     if (formData) {
+      console.log("formData", formData._parts[0][1])
       await axiosPrivate.patch(`/user/${user._id}/updateAvatar`, formData, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -113,7 +108,7 @@ export default function User({ navigation, route }) {
     }
     navigation.goBack();
   };
-  return (
+  return ( 
     <View style={styles.container}>
       <View style={styles.ViewTop}>
         <TouchableOpacity

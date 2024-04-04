@@ -50,33 +50,44 @@ export default function User({ navigation }) {
   // thông tin user hiện tại lưu trên firebase
   const user = auth.currentUser;
   async function ChangePass() {
+    const regexPass =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/])[A-Za-z\d!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/]{8,}$/;
     // Lấy thông tin xác thực từ email và mật khẩu hiện tại
     const credential = EmailAuthProvider.credential(user.email, matKhauHienTai);
-    await reauthenticateWithCredential(user,credential)
+    await reauthenticateWithCredential(user, credential)
       .then(() => {
         // Mật khẩu hiện tại trùng khớp, tiến hành cập nhật mật khẩu mới
-
-        if (matKhauMoi !== xacNhanMatKhau) {
-          setNotification("Mật khẩu không khớp");
+        if (matKhauMoi.length >= 8) {
+          if (regexPass.test(matKhauMoi)) {
+            if (matKhauMoi !== xacNhanMatKhau) {
+              setNotification("Mật khẩu không khớp");
+            } else {
+              setNotification("");
+              updatePassword(user, matKhauMoi)
+                .then(() => {
+                  // Cập nhật mật khẩu thành công
+                  console.log("Mật khẩu đã được cập nhật");
+                  setNotification("Mật khẩu đã được cập nhật");
+                  // Hiển thị modal thông báo
+                  setModalVisible(true);
+                  // Xóa trạng thái mật khẩu để người dùng nhập lại
+                  setMatKhauHienTai("");
+                  setMatKhauMoi("");
+                  setXacNhanMatKhau("");
+                })
+                .catch((error) => {
+                  // Xảy ra lỗi khi cập nhật mật khẩu
+                  console.error("Lỗi khi cập nhật mật khẩu: ", error);
+                  setNotification(error.message);
+                });
+            }
+          } else {
+            setNotification(
+              "Mật khẩu phải chứa ít nhất 1 chữ hoa 1 chữ thường 1 số"
+            );
+          }
         } else {
-          setNotification("");
-          updatePassword(user, matKhauMoi)
-            .then(() => {
-              // Cập nhật mật khẩu thành công
-              console.log("Mật khẩu đã được cập nhật");
-              setNotification("Mật khẩu đã được cập nhật");
-              // Hiển thị modal thông báo
-              setModalVisible(true);
-              // Xóa trạng thái mật khẩu để người dùng nhập lại
-              setMatKhauHienTai("");
-              setMatKhauMoi("");
-              setXacNhanMatKhau("");
-            })
-            .catch((error) => {
-              // Xảy ra lỗi khi cập nhật mật khẩu
-              console.error("Lỗi khi cập nhật mật khẩu: ", error);
-              setNotification(error.message);
-            });
+          setNotification("Mật khẩu phải có ít nhất 8 ký tự");
         }
       })
       .catch((error) => {

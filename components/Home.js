@@ -7,7 +7,7 @@ export default function SwiperComponent({navigation}) {
   return (
     <View style={styles.container}>
         <Text style={{color:'#006AF5',fontSize:33,fontWeight:700,marginVertical: 10,}}>
-            Zalo
+            Zola
         </Text>
         <Image source={require('../assets/backgroundHome.jpg')} style={styles.backImage} />
       <View style={styles.ViewSwiper}>

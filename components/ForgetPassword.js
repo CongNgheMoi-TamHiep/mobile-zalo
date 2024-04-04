@@ -14,11 +14,11 @@ import CountryPicker from "react-native-country-picker-modal";
 import PhoneNumber from "libphonenumber-js";
 import axiosPrivate from "../api/axiosPrivate.js";
 
-export default function App({ navigation }) {
+export default function App({ navigation,route }) {
   const [matKhauMoi, setMatKhauMoi] = useState("");
   const [xacNhanMatKhau, setXacNhanMatKhau] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [sdt, setsdt] = useState("");
+  const [sdt, setsdt] = useState(route.params?.sdt);
   const [isFieldsFilled, setIsFieldsFilled] = useState(false);
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -45,6 +45,8 @@ export default function App({ navigation }) {
     setCallingCode("+" + country.callingCode.join(""));
   };
   async function TiepTuc() {
+    const regexPass =
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/])[A-Za-z\d!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/]{8,}$/;
     const phoneNumber = PhoneNumber.isPossibleNumber(sdt, countryCode);
     if (phoneNumber) {
       // bỏ số 0 ở đầu số điện thoại
@@ -56,21 +58,27 @@ export default function App({ navigation }) {
         `/check/number/${PhoneNumberIsExist}`
       );
       if (response.numberExists) {
-        if (matKhauMoi.length >= 6) {
-          if (matKhauMoi === xacNhanMatKhau) {
-            navigation.navigate("ForgetPasswordOTP", {
-              callingCode: callingCode,
-              SDT: formattedSDT,
-              mkMoi: matKhauMoi,
-            });
-            console.log("ok");
-            setErrorMessage("");
+        if (matKhauMoi.length >= 8) {
+          if (regexPass.test(matKhauMoi)) {
+            if (matKhauMoi === xacNhanMatKhau) {
+              navigation.navigate("ForgetPasswordOTP", {
+                callingCode: callingCode,
+                SDT: formattedSDT,
+                mkMoi: matKhauMoi,
+              });
+              console.log("ok");
+              setErrorMessage("");
+            } else {
+              setErrorMessage("Mật khẩu không khớp");
+            }
           } else {
-            setErrorMessage("Mật khẩu không khớp");
+            setErrorMessage(
+              "Mật khẩu phải chứa ít nhất 1 chữ hoa 1 chữ thường 1 số"
+            );
           }
         } else {
           // đoạn này thêm regex để kiểm tra mật khẩu
-          setErrorMessage("Mật khẩu phải có ít nhất 6 ký tự");
+          setErrorMessage("Mật khẩu phải có ít nhất 8 ký tự");
         }
       } else {
         setErrorMessage("Số điện thoại chưa sử dụng Zola");
@@ -115,18 +123,18 @@ export default function App({ navigation }) {
             onChangeText={(text) => setsdt(text)}
           />
         </View>
-        
+
         <View
           style={{
             width: "90%",
             height: 30,
-            marginTop:5,
+            marginTop: 5,
             flexDirection: "row",
             justifyContent: "space-between",
           }}
         >
           <Text style={{ fontSize: 17, fontWeight: "500", color: "#0250B6" }}>
-          Mật khẩu mới:<Text style={{ color: "red" }}> *</Text>
+            Mật khẩu mới:<Text style={{ color: "red" }}> *</Text>
           </Text>
           <TouchableOpacity onPress={togglePasswordVisibility}>
             <Text style={{ fontSize: 17, color: "#767A7F" }}>
