@@ -53,11 +53,13 @@ export default function App({ navigation, route }) {
     // console.log(phoneNumber);
     phoneProvider
       .verifyPhoneNumber(phoneNumber, recaptchaVerifier.current,{
-        // mã xác thực sẽ hết hạn sau 2 phút
-        timeout: 120000 ,
+        
       })
       .then((verificationId) => {
         setVerificationId(verificationId);
+        // setTimeout(() => {
+        //   setVerificationId(null); // Vô hiệu hóa mã OTP
+        // }, 60000); // 1 phút = 60.000 milliseconds
       })
       .catch((error) => {
         console.log("Error sending OTP:", error);

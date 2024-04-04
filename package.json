@@ -25,6 +25,7 @@
     "dotenv": "^16.4.0",
     "expo": "~49.0.15",
     "expo-av": "^13.6.0",
+    "expo-barcode-scanner": "^12.9.3",
     "expo-constants": "^14.5.1",
     "expo-contacts": "^12.8.2",
     "expo-firebase-core": "^6.0.0",

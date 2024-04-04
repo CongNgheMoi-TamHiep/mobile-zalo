@@ -63,7 +63,12 @@ export default function MyTabs({ navigation, route }) {
     </TouchableOpacity>
   );
   const renderQRIcon = () => (
+    <TouchableOpacity onPress={()=>{
+      navigation.navigate("QRCode");
+    }}>
     <MaterialCommunityIcons name="qrcode-scan" size={24} color="white" />
+
+    </TouchableOpacity>
   );
   const renderPlusIcon = () => <Feather name="plus" size={34} color="white" />;
   const renderAddUserIcon = () => (

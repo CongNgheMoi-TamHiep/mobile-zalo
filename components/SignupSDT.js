@@ -47,7 +47,7 @@ export default function App({ navigation, route }) {
   const [errorPassword, setErrorPassword] = useState("");
   async function handelTaoSDT() {
     const regexSDT =
-      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/])[A-Za-z\d!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/]{8,}$/;
+      /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/])[A-Za-z\d!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/]{8,16}$/;
     //kiểm tra sdt đúng quốc gia chưa
     const phoneNumber = PhoneNumber.isPossibleNumber(SDT, countryCode);
     if (phoneNumber) {
@@ -61,7 +61,7 @@ export default function App({ navigation, route }) {
       );
 
       if (!response.numberExists) {
-        if (password.length >= 8) {
+        if (password.length >= 8  &&password.length<=16) {
           if (regexSDT.test(password)) {
             setErrorSDT("");
             setErrorPassword("");
@@ -78,7 +78,7 @@ export default function App({ navigation, route }) {
           }
         } else {
           setErrorSDT("");
-          setErrorPassword("Mật khẩu phải có ít nhất 8 ký tự");
+          setErrorPassword("Mật khẩu phải có từ 8 đến 16 kí tự");
         }
       } else {
         setErrorPassword("");

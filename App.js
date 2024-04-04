@@ -25,6 +25,7 @@ import ForgetPassword from "./components/ForgetPassword.js";
 import UserInformation from "./components/UserInformation.js";
 import ChangePassword from "./components/ChangePassword.js";
 import ForgetPasswordOTP from "./components/ForgetPasswordOTP.js";
+import QRCode from "./components/QRCode.js";
 // ...
 
 const auth = getAuth();
@@ -78,6 +79,13 @@ function ChatStack() {
             backgroundColor: "#00aaff",
           },
           headerTintColor: "white",
+        }}
+      />
+       <Stack.Screen
+        name="QRCode"
+        component={QRCode}
+        options={{
+          headerShown: false,
         }}
       />
       </Stack.Navigator>
