@@ -53,7 +53,7 @@ export default function App({ navigation, route }) {
     // console.log(phoneNumber);
     phoneProvider
       .verifyPhoneNumber(phoneNumber, recaptchaVerifier.current,{
-        
+        // timeout: 120000,
       })
       .then((verificationId) => {
         setVerificationId(verificationId);

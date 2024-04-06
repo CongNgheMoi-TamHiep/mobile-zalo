@@ -57,11 +57,12 @@ export default function User({ navigation, route }) {
   const [Type, setType] = React.useState("");
   const [formData, setFormData] = React.useState(null);
   const pickImage = async () => {
-    let result = await ImagePicker.launchCameraAsync({
+    let result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 4],
       quality: 1,
+      // allowsMultipleSelection:true
     });
     if (result.cancelled) {
       return;

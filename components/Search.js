@@ -16,25 +16,38 @@ import {
 } from "@expo/vector-icons";
 import axiosPrivate from "../api/axiosPrivate.js";
 import { AuthenticatedUserContext } from "../App.js";
+import { set } from "date-fns";
+import { useNavigation } from "@react-navigation/native";
 
 function FormatTenQuaDai(text, maxLength) {
   return text.length > maxLength
     ? text.substring(0, maxLength - 3) + "..."
     : text;
 }
-export default function User({ navigation }) {
+export default function User() {
   const { user } = useContext(AuthenticatedUserContext);
-
   const [searchText, setSearchText] = useState("");
   const [users, setUsers] = useState([]);
+  const navigation = useNavigation();
+
+  // lấy danh sách bạn bè của user hiện hành
+  const fetchUserData = async () => {
+    try {
+      const users = await axiosPrivate(`/friends/${user.uid}`);
+        console.log("users",users)
+     setUsers(users);
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+    }
+  };
   useEffect(() => {
-    (async () => {
-      const users = await axiosPrivate("/user");
-     // lọc ra những người dùng không phải là mình
-     const new_User = users.filter((item) => item.number !== user.phoneNumber);      
-     setUsers(new_User);
-    })();
-  }, []);
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+  
   //hàm render danh sách liên hệ đẫ tìm
   const renderUserItem = ({ item }) => (
     <TouchableOpacity onPress={() => { }}>
@@ -53,10 +66,94 @@ export default function User({ navigation }) {
       </View>
     </TouchableOpacity>
   );
+  
+  // Lọc danh sách liên hệ theo tên, kết quả tìm kiếm sẽ được hiển thị sau 300ms
+  const [filteredUsers, setFilteredUsers] = useState([]);
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setSearchUserByPhone(null);
+      handleSearch();
+    }, 300);
+
+    return () => clearTimeout(timerId);
+  }, [searchText]);
+  const [searchUserByPhone , setSearchUserByPhone] = useState({});
+   // pending1: userId1 đã gửi lời mời cho userId2 
+        // pending2: userId2 đã gửi lời mời cho userId1
+        // accepted: userId1 và userId2 đã là bạn 
+        // nofriend: userId1 và userId2 chưa là bạn
+        // declined1: userId1 bị từ chối kết bạn từ userId2
+        // declined2: userId2 bị từ chối kết bạn từ userId1
+  const [isFriend, setIsFriend] = useState("");
+  const handleSearch = async () => {
+    
+    const filteredUsers = users.filter((user) =>
+      user.name.toLowerCase().includes(searchText.toLowerCase())
+    );
+    // nếu không có kết quả tìm kiếm thì kiểm tra xem số điện thoại có tồn tại không
+    if(filteredUsers.length === 0){
+      const formattedSDT = searchText.replace(/^0+/, "");
+      const phoneNumber = "+84"+formattedSDT;
+      const response = await axiosPrivate(
+        `/user/number/${phoneNumber}`
+      );
+      if(response){
+        // kiểm tra xem số đó có phải là số của mình không, phải thì k hiện
+        if (response?.number==user.phoneNumber){
+          setSearchUserByPhone(null)
+        }
+        else{
+          //id 1 là user hiện hành, id 2 người đang đc tìm thấy
+          const stateFriend = await axiosPrivate("/friendRequest/state", {
+            params: { userId1: user.uid, userId2: response._id },
+          })
+          console.log("stateFriend",stateFriend)
+          setIsFriend(stateFriend);          
+          setSearchUserByPhone(response);  
+        }
+      }
+    
+    }
+    setFilteredUsers(filteredUsers);
+  };
+  //Hàm kết bạn
+  const KetBan = async () => {
+    try{
+      await axiosPrivate.post("/friendRequest/send", {
+        senderUserId: user.uid,
+        receiverUserId: searchUserByPhone._id,
+      });
+      setIsFriend("pending1");
+    }catch(err){
+      console.log("Lỗi kết bạn",err);
+    }
+  };
+  //hàm đồng ý kết bạn
+  const DongY = async () => {
+    try{
+      await axiosPrivate.post("/friendRequest/accept", {
+        friendRequestId: searchUserByPhone._id+"-"+user.uid,
+      });
+      setIsFriend("accepted");
+    }catch(err){
+      console.log("Lỗi đồng ý kết bạn",err);
+    }
+  };
+  //hàm mở cuộc trò chuyện
+  function OpenConvertation(){
+    if(isFriend ==="accepted"){
+      const searchUser = users.find((user) => user.userId === searchUserByPhone._id);
+      // console.log("searchUser",searchUser)
+      navigation.navigate('Conversations', { searchUser: searchUser })
+    }
+    else{
+      console.log("Chưa là bạn")
+    }
+  }
   //Hàm render danh sách tìm kiếm
   const renderUserItemSearch = ({ item }) => (
 
-    <TouchableOpacity onPress={() => { console.log(item); navigation.navigate('Conversations', { searchUser: item }) }}>
+    <TouchableOpacity onPress={() => { console.log("item",item); navigation.navigate('Conversations', { searchUser: item }) }}>
       <View
         style={{
           alignItems: "center",
@@ -97,22 +194,6 @@ export default function User({ navigation }) {
       </View>
     </TouchableOpacity>
   );
-  // Lọc danh sách liên hệ theo tên, kết quả tìm kiếm sẽ được hiển thị sau 300ms
-  const [filteredUsers, setFilteredUsers] = useState([]);
-  useEffect(() => {
-    const timerId = setTimeout(() => {
-      handleSearch();
-    }, 300);
-
-    return () => clearTimeout(timerId);
-  }, [searchText]);
-
-  const handleSearch = () => {
-    const filteredUsers = users.filter((user) =>
-      user.name.toLowerCase().includes(searchText.toLowerCase())
-    );
-    setFilteredUsers(filteredUsers);
-  };
   return (
     <View style={styles.container}>
       <View
@@ -184,7 +265,37 @@ export default function User({ navigation }) {
           //   contentContainerStyle={styles.userList}
           />
         </View>
-      ) : filteredUsers.length === 0 ? (
+      ) : filteredUsers.length === 0 ? searchUserByPhone ?(
+       <TouchableOpacity onPress={OpenConvertation} activeOpacity={0.8} style={{ backgroundColor: "#fff",width:'100%',height:60, flexDirection:'row',alignItems:'center',justifyContent:'space-around', paddingHorizontal:5}}>
+          <Image style={{width:45, height:45,borderRadius:100}} source={{uri:searchUserByPhone.avatar}} />
+          <View style={{width:'58%', height:'100%', alignItems:'flex-start',justifyContent:'center'}}>
+            <Text style={{fontSize:17,fontWeight:500}}>
+              {searchUserByPhone.name}
+            </Text>
+            <Text  style={{fontSize:16,fontWeight:500,color:'#767A7F'}}>
+             Số điện thoại: {searchUserByPhone.number}
+            </Text>
+          </View>
+            {isFriend ==="accepted"? (
+            <TouchableOpacity style={{ width:40, height:40, borderRadius:50, backgroundColor:'#E0FFFF', alignItems:'center', justifyContent:'center'}}>
+              <Feather name="phone" size={20} color="#006AF5" />
+          </TouchableOpacity>)
+          :isFriend ==="nofriend"||isFriend==="declined2"?(
+          <TouchableOpacity onPress={KetBan} style={{width:85, height:35, borderRadius:15, backgroundColor:'#E0FFFF', alignItems:'center', justifyContent:'center'}}>
+            <Text style={{fontSize:16,fontWeight:500,color:'#006AF5'}}>Kết bạn</Text>
+          </TouchableOpacity>
+          )
+          :isFriend ==="pending2"?(
+            <TouchableOpacity onPress={DongY}  style={{width:85, height:35, borderRadius:15, backgroundColor:'#E0FFFF', alignItems:'center', justifyContent:'center'}}>
+            <Text style={{fontSize:16,fontWeight:500,color:'#006AF5'}}>Đồng ý</Text>
+          </TouchableOpacity>
+          )
+          :<View style={{width:85}}>
+            </View>}
+       </TouchableOpacity>
+      )
+      :
+      (
         // Hiển thị nội dung khi không có kết quả tìm kiếm
         <Text style={{ fontSize: 18, fontWeight: 600, textAlign: "center" }}>
           Không có kết quả tìm kiếm
@@ -205,7 +316,7 @@ export default function User({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#D6D9DC",
   },
   FlatList: {
     marginRight: 10,

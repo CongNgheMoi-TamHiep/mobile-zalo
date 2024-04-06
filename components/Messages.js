@@ -31,7 +31,7 @@ export default function Chat({ navigation }) {
                 );
                 console.log("user conversation");
                 console.log(
-                    userConversations.conversations[0].lastMess.createdAt
+                    userConversations?.conversations[0]?.lastMess.createdAt
                 );
                 setData(userConversations.conversations);
             } catch (error) {
@@ -113,7 +113,7 @@ export default function Chat({ navigation }) {
                         {item?.user?.name || item?.name}
                     </Text>
                     <Text style={{ fontSize: 16, color: "grey" }}>
-                        { (isNew && chatReceived?.content.text) || item.lastMess.content.text}
+                        { (isNew && chatReceived?.content.text) || item?.lastMess.content.text}
                     </Text>
                 </View>
                 <View
@@ -126,7 +126,7 @@ export default function Chat({ navigation }) {
                     }}
                 >
                     <Text style={{ color: "grey", fontSize: 14 }}>
-                        {formatTimeSendMessage( (isNew && chatReceived?.createdAt) || item.lastMess.createdAt)}
+                        {formatTimeSendMessage( (isNew && chatReceived?.createdAt) || item?.lastMess.createdAt)}
                     </Text>
                 </View>
             </TouchableOpacity>

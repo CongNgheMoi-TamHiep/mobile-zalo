@@ -14,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import axiosPrivate from "../api/axiosPrivate.js";
 import { useFocusEffect } from "@react-navigation/native";
 import { AuthenticatedUserContext } from "../App.js";
+import { useNavigation } from "@react-navigation/native";
 
 import * as Contacts from "expo-contacts";
 import { set } from "date-fns";
@@ -26,17 +27,27 @@ function FormatTenQuaDai(text, maxLength) {
 }
 
 function BanBe() {
+  const navigation = useNavigation();
+
   const { user } = useContext(AuthenticatedUserContext);
   const [users, setUsers] = useState([]);
   useEffect(() => {
-    (async () => {
-      const users = await axiosPrivate("/user");
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchUserData();
+    });
+    return unsubscribe;
+  }, [navigation]);
+  
+  const fetchUserData = async () => {
+      try{ const users = await axiosPrivate(`/friends/${user.uid}`);
       // lọc ra những người dùng không phải là mình
       const new_User = users.filter((item) => item.number !== user.phoneNumber);
-      setUsers(new_User);
-    })();
-  }, []);
-
+      setUsers(new_User);}
+      catch (error) {
+        console.error("Error fetching user data: ", error);
+      }
+    
+  };
   // Sắp xếp danh sách bạn bè theo tên (name)
   let sortedData = users.slice().sort((a, b) => a.name.localeCompare(b.name));
 
@@ -55,6 +66,7 @@ function BanBe() {
       <ScrollView>
         <View style={styles.ViewTop}>
           <TouchableOpacity
+          onPress={() => navigation.navigate("FriendRequest")}
             style={{ flexDirection: "row", alignItems: "center" }}
           >
             <View
@@ -363,7 +375,7 @@ export default function Contact() {
       }}
     >
       <Tab.Screen name="Bạn bè" component={BanBe} />
-      <Tab.Screen name="Danh bạ máy" component={DanhBaMay} />
+      {/* <Tab.Screen name="Danh bạ máy" component={DanhBaMay} /> */}
     </Tab.Navigator>
   );
 }
