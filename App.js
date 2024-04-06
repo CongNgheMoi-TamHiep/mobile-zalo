@@ -26,6 +26,7 @@ import UserInformation from "./components/UserInformation.js";
 import ChangePassword from "./components/ChangePassword.js";
 import ForgetPasswordOTP from "./components/ForgetPasswordOTP.js";
 import QRCode from "./components/QRCode.js";
+import FriendRequest from "./components/FriendRequest.js";
 // ...
 
 const auth = getAuth();
@@ -75,6 +76,18 @@ function ChatStack() {
         options={{
           headerShown: true,
           title: "Cập nhật mật khẩu",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
+       <Stack.Screen
+        name="FriendRequest"
+        component={FriendRequest}
+        options={{
+          headerShown: true,
+          title: "Lời mời kết bạn",
           headerStyle: {
             backgroundColor: "#00aaff",
           },

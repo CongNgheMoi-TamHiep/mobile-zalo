@@ -84,6 +84,7 @@ export default function User() {
       type: "image/png",
     });
     if (formData2) {
+      console.log("formData2  ", formData2._parts[0][1]);
       await axiosPrivate.patch(`/user/${user._id}/updateAvatar`, formData2, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -250,7 +251,7 @@ const styles = StyleSheet.create({
   },
   ViewAVTName: {
     width: "50%",
-    height: 50,
+    height: 60,
     alignItems: "center",
     flexDirection: "row",
     gap: 10,
