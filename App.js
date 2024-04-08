@@ -26,6 +26,7 @@ import UserInformation from "./components/UserInformation.js";
 import ChangePassword from "./components/ChangePassword.js";
 import ForgetPasswordOTP from "./components/ForgetPasswordOTP.js";
 import QRCode from "./components/QRCode.js";
+import ForwardMessage from "./components/ForwardMessage.js";
 // ...
 
 const auth = getAuth();
@@ -46,6 +47,11 @@ function ChatStack() {
         <Stack.Screen
           name="MyTabs"
           component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ForwardMessage"
+          component={ForwardMessage}
           options={{ headerShown: false }}
         />
         <Stack.Screen

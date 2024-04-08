@@ -15,7 +15,7 @@ import { useCurrentUser } from "../App";
 import mime from "mime";
 import Modal from "react-native-modal";
 import { set } from "date-fns";
-// import DocumentPicker from 'react-native-document-picker';
+import * as DocumentPicker from 'expo-document-picker';
 
 export default function Conversations({ route, navigation }) {
 
@@ -120,7 +120,8 @@ export default function Conversations({ route, navigation }) {
             const response = await axiosPrivate.post(`/chat/deleteYourSide/${selectedMessage._id}`);
             console.log("Tin nhắn đã được xóa: ", response);
             setIsConfirmModalVisible(false);
-            setIsConfirmModalImageVisible(true);
+            setIsConfirmModalImageVisible(false);
+            setIsConfirmModalVideoVisible(false);
 
         } catch (error) {
             console.error('Lỗi khi xóa tin nhắn:', error);
@@ -136,6 +137,7 @@ export default function Conversations({ route, navigation }) {
             console.log("Tin nhắn đã thu hồi: ", response);
             setModalVisible(false);
             setModalImageVisible(false);
+            setModalVideoVisible(false);
 
         } catch (error) {
             console.error('Lỗi khi thu hồi tin nhắn:', error);
@@ -191,6 +193,15 @@ export default function Conversations({ route, navigation }) {
     // modal confirm unsend image
     const toggleConfirmUnsendImage = () => {
         setIsConfirmModalImageVisible(!isConfirmModalImageVisible);
+    }
+
+    // modal unsend video
+    const toggleUnsendVideo = () => {
+        setModalVideoVisible(!isModalVideoVisible);
+    }
+    // modal confirm unsend video
+    const toggleConfirmUnsendVideo = () => {
+        setIsConfirmModalVideoVisible(!isConfirmModalVideoVisible);
     }
 
     // xử lí gửi ảnh
@@ -273,12 +284,6 @@ export default function Conversations({ route, navigation }) {
         setModalImageVisible(true);
     };
 
-    const handleVideoLongPress = (context, message) => {
-        console.log('Bạn đã nhấn và giữ vào video:', message);
-        // setSelectedMessage(message);
-        // setModalImageVisible(true);
-    }
-
 
     // custom header
     useLayoutEffect(() => {
@@ -332,45 +337,14 @@ export default function Conversations({ route, navigation }) {
     // Gui tai lieu
     const pickDocument = async () => {
         try {
-            const res = await DocumentPicker.pickSingle({
-                type: [DocumentPicker.types.allFiles], // Chỉ định loại tệp bạn muốn cho phép người dùng chọn
-            });
-            console.log(
-                'URI:', res.uri,
-                'Type:', res.type, // Mimetype của tệp
-                'Name:', res.name, // Tên của tệp
-                'Size:', res.size // Kích thước của tệp
-            );
-            // Xử lý các thông tin của tệp đã chọn ở đây
-        } catch (err) {
-            if (DocumentPicker.isCancel(err)) {
-                // Người dùng đã hủy chọn tệp
-                console.log('User cancelled the picker');
-            } else {
-                // Đã xảy ra lỗi khi chọn tệp
-                console.log('Error:', err);
-            }
-        }
-    }
-
-
-    const handleFilePick = async () => {
-        try {
-            const res = await FilePickerManager.showFilePicker(null, (response) => {
-                console.log('Response = ', response);
-
-                if (response.didCancel) {
-                    console.log('User cancelled file picker');
-                } else if (response.error) {
-                    console.log('FilePickerManager Error response: ', response.error);
-                } else {
-                    console.log('File picked: ', response);
-                    // Xử lý tệp đã chọn ở đây
-                }
-            });
-
+            const document = await DocumentPicker.getDocumentAsync();
+            console.log('Document picked:', document);
+            // if (document.type === 'success') {
+            //     console.log('Document picked:', document);
+            //     // Xử lý tệp đã chọn ở đây
+            // }
         } catch (error) {
-            console.log('FilePickerManager Error: ', error);
+            console.error('Error picking document:', error);
         }
     };
 
@@ -488,7 +462,7 @@ export default function Conversations({ route, navigation }) {
                             style={{
                                 marginTop: 5
                             }}
-                        // onPress={handleFilePick}
+                            onPress={pickDocument}
                         />
                         <SimpleLineIcons
                             name="microphone"
@@ -530,7 +504,7 @@ export default function Conversations({ route, navigation }) {
     // cái này dùng để custom bóng chat
 
     const renderBubble = (props) => {
-        const { user, createdAt, text, image, video } = props.currentMessage;
+        const { user, createdAt, text, image, video, messageId } = props.currentMessage;
 
         // Kiểm tra nếu là tin nhắn hình ảnh
         if (image) {
@@ -578,6 +552,10 @@ export default function Conversations({ route, navigation }) {
                 <View style={{ width: 280, height: 300, overflow: 'hidden', flexDirection: 'row' }}>
                     <TouchableOpacity
                         style={{ width: 30, height: '100%', justifyContent: "center" }}
+                        onPress={() => {
+                            setSelectedMessage(props.currentMessage);
+                            setModalVideoVisible(true);
+                        }}
                     >
                         <Entypo name="dots-three-horizontal" size={24} color="black" />
                     </TouchableOpacity>
@@ -656,7 +634,7 @@ export default function Conversations({ route, navigation }) {
                 timeTextStyle={{ left: { color: '#95999A' }, right: { color: '#F0F0F0' } }} // Màu của thời gian
                 renderBubble={renderBubble} // custom màu bóng chat 
                 renderSend={renderSend} // custom icon gửi thay vì chữ SEND
-                renderMessageVideo={renderMessageVideo} // dùng để gửi video
+                // renderMessageVideo={renderMessageVideo} // dùng để gửi video
                 renderMessageImage={(props) => (
                     <CustomImage
                         {...props}
@@ -702,7 +680,13 @@ export default function Conversations({ route, navigation }) {
                                 Reply
                             </Text>
                         </View>
-                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                        <TouchableOpacity
+                            style={{ width: 55, height: 60, alignItems: 'center' }}
+                            onPress={() => {
+                                navigation.navigate('ForwardMessage', { message: selectedMessage });
+                                setModalVisible(false);
+                            }}
+                        >
                             <Image
                                 source={require('../assets/arrow.png')}
                                 style={{ width: 32, height: 32 }}
@@ -710,7 +694,7 @@ export default function Conversations({ route, navigation }) {
                             <Text>
                                 Forward
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             style={{ width: 55, height: 60, alignItems: 'center' }}
                             onPress={unsendMessage}
@@ -842,8 +826,8 @@ export default function Conversations({ route, navigation }) {
                         <TouchableOpacity
                             style={{ width: 55, height: 60, alignItems: 'center' }}
                             onPress={() => {
-                                setModalImageVisible(false);
-                                setIsConfirmModalImageVisible(true);
+                                setModalVideoVisible(false);
+                                setIsConfirmModalVideoVisible(true);
                             }}
                         >
                             <Image
@@ -854,10 +838,8 @@ export default function Conversations({ route, navigation }) {
                                 Delete
                             </Text>
                         </TouchableOpacity>
-
                     </View>
                 </View>
-
             </Modal>
             {/* ================================================================= Modal xác nhận khi xóa tin nhắn hình ảnh */}
             <Modal
@@ -886,6 +868,123 @@ export default function Conversations({ route, navigation }) {
                     <View style={{ width: '100%', height: '50%', marginTop: 10, flexDirection: 'row', justifyContent: 'space-around' }}>
                         <TouchableOpacity
                             onPress={() => { setIsConfirmModalImageVisible(false) }}
+                        >
+                            <Text style={{ fontSize: 18, fontWeight: '800' }}>
+                                Hủy
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            onPress={deleteMessage}
+                        >
+                            <Text style={{ fontSize: 18, fontWeight: '800', color: 'red' }}>
+                                Xóa
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+
+                </View>
+            </Modal>
+            {/* ================================================================= Modal khi xóa tin nhắn video */}
+            <Modal
+                isVisible={isModalVideoVisible}
+                onBackdropPress={toggleUnsendVideo}
+                style={{
+                    position: 'absolute',
+                    top: 250,
+                    left: 35
+                }}
+                backdropOpacity={0.65}
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+                backdropTransitionInTiming={600}
+                backdropTransitionOutTiming={600}
+                hideModalContentWhileAnimating={true}
+            >
+                <View style={{ width: 250, height: 300, marginLeft: 70 }}>
+                    <Video
+                        source={{
+                            uri: selectedMessage.video
+                        }}
+                        style={{ width: '100%', height: '100%', borderRadius: 20 }}
+                    />
+                </View>
+                <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
+                    <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                            <Image
+                                source={require('../assets/reply.png')}
+                                style={{ width: 32, height: 32 }}
+                            />
+                            <Text>
+                                Reply
+                            </Text>
+                        </View>
+                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                            <Image
+                                source={require('../assets/arrow.png')}
+                                style={{ width: 32, height: 32 }}
+                            />
+                            <Text>
+                                Forward
+                            </Text>
+                        </View>
+                        <TouchableOpacity
+                            style={{ width: 55, height: 60, alignItems: 'center' }}
+                            onPress={unsendMessage}
+                        >
+                            <Image
+                                source={require('../assets/message.png')}
+                                style={{ width: 32, height: 32 }}
+                            />
+                            <Text>
+                                Recall
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={{ width: 55, height: 60, alignItems: 'center' }}
+                            onPress={() => {
+                                setModalVideoVisible(false);
+                                setIsConfirmModalVideoVisible(true);
+                            }}
+                        >
+                            <Image
+                                source={require('../assets/delete.png')}
+                                style={{ width: 32, height: 32 }}
+                            />
+                            <Text>
+                                Delete
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
+            {/* ================================================================= Modal xác nhận khi xóa tin nhắn video */}
+            <Modal
+                isVisible={isConfirmModalVideoVisible}
+                onBackdropPress={toggleConfirmUnsendVideo}
+                style={{
+                    position: 'absolute',
+                    top: 300,
+                    left: 20
+                }}
+                backdropOpacity={0.65}
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+                backdropTransitionInTiming={600}
+                backdropTransitionOutTiming={600}
+                hideModalContentWhileAnimating={true}
+            >
+                <View style={{ width: 325, height: 160, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 0, marginBottom: 30 }}>
+                    <Text style={{ width: 260, fontSize: 20, fontWeight: "600", marginLeft: 10, marginTop: 25 }}>
+                        Bạn có muốn xóa video này?
+                    </Text>
+                    <Text style={{ fontSize: 16, fontWeight: "400", marginLeft: 10, marginTop: 10 }}>
+                        Video này sẽ được xóa ở phía bạn
+                    </Text>
+                    <View style={{ borderWidth: 0.5, width: '100%', marginTop: 10 }} />
+                    <View style={{ width: '100%', height: '50%', marginTop: 10, flexDirection: 'row', justifyContent: 'space-around' }}>
+                        <TouchableOpacity
+                            onPress={() => { setIsConfirmModalVideoVisible(false) }}
                         >
                             <Text style={{ fontSize: 18, fontWeight: '800' }}>
                                 Hủy
