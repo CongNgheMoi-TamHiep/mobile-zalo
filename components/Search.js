@@ -130,6 +130,7 @@ export default function User() {
   };
   //hàm đồng ý kết bạn
   const DongY = async () => {
+
     try{
       await axiosPrivate.post("/friendRequest/accept", {
         friendRequestId: searchUserByPhone._id+"-"+user.uid,
@@ -139,6 +140,16 @@ export default function User() {
       console.log("Lỗi đồng ý kết bạn",err);
     }
   };
+  //hàm thu hồi lời mời kết bạn
+  async function ThuHoi() {
+    const id = user.uid+"-"+searchUserByPhone._id;
+    try {
+      await axiosPrivate.post(`/friendRequest/cancel`, { friendRequestId: id });
+      setIsFriend("nofriend");
+    } catch (error) {
+      console.log(error);
+    }
+  }
   //hàm mở cuộc trò chuyện
   function OpenConvertation(){
     if(isFriend ==="accepted"){
@@ -290,7 +301,11 @@ export default function User() {
             <Text style={{fontSize:16,fontWeight:500,color:'#006AF5'}}>Đồng ý</Text>
           </TouchableOpacity>
           )
-          :<View style={{width:85}}>
+          :isFriend ==="pending1"?( <TouchableOpacity onPress={ThuHoi}  style={{width:85, height:35, borderRadius:15, backgroundColor:'#E0E0E0', alignItems:'center', justifyContent:'center'}}>
+          <Text style={{fontSize:16,fontWeight:500,color:'black'}}>Thu hồi</Text>
+        </TouchableOpacity>)
+          :
+          <View style={{width:85}}>
             </View>}
        </TouchableOpacity>
       )

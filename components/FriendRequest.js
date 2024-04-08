@@ -19,6 +19,8 @@ import axiosPrivate from "../api/axiosPrivate.js";
 import { set } from "date-fns";
 import { useCurrentUser } from "../App";
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
+import { useSocket } from "../context/SocketProvider.js";
+import { useShowModel } from "../context/ShowModelProvider.js";
 const Tab = createMaterialTopTabNavigator();
   //hàm covert ngày tháng giờ phút gửi lời mời kết bạn
 function covertTime(time){
@@ -35,11 +37,25 @@ function covertTime(time){
 }
 function DaNhan({ navigation }) {
   const [dataDaNhan, setDataDaNhan] = useState([]);
+  const [req, setReq] = useState(null);
   const currentUser = useCurrentUser();
+  const {socket} = useSocket();
+  useEffect(() => {
+    console.log("socket.id")
+    console.log(socket.id)
+    socket.on('receiveFriendRequest', (data) => {
+        setReq(data);
+    })
+  }, [socket.id])
 
-  useEffect( () => {
-     getReceivedFriendRequests();
-  }, []);
+  useEffect(() => {
+    if (req) 
+      setDataDaNhan([...dataDaNhan, req]);
+  }, [req])
+
+  useEffect(() => {
+    getReceivedFriendRequests();
+  }, [])
   // hàm lấy danh sách lời mời kết bạn đã nhận
   async function getReceivedFriendRequests() {
     try {

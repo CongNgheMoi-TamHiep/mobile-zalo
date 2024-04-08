@@ -175,6 +175,7 @@ function DanhBaMay() {
       setUsers(users);
     })();
   }, []);
+
   //hàm kiểm tra xem sdt đó có đang dùng zalo không
   function isCoDungZL(sdt) {
     const isCoDungZL = users.find((user) => {
@@ -196,7 +197,10 @@ function DanhBaMay() {
           const { data } = await Contacts.getContactsAsync({
             fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
           });
-          setContacts(data);
+          const filteredContacts = data.filter(contact => contact.phoneNumbers && contact.phoneNumbers.length > 0);
+
+
+          setContacts(filteredContacts);
         }
       };
       fetchContacts();
@@ -208,14 +212,27 @@ function DanhBaMay() {
     }, [])
   );
   // format danh bạ máy về dạng mảng object {nameDanhBa, number}
-  const formatContacts = contacts.map((v) => {
-    return {
-      nameDanhBa: v.name,
-      number: v.phoneNumbers[0].number,
-    };
-  });
+  
   // kiểm tra trên database có phonebook không, nếu không có thì lấy danh bạ máy, nếu có thì lấy phonebook
-  const phonebook1 = phonebook.length != 0 ? phonebook : formatContacts;
+  const handleFormatContacts = (contacts) => {
+    const a = contacts.filter((item) => {
+      return  isCoDungZL(item.phoneNumbers[0].number);
+    });
+    return a.map((v) => {
+      return {
+        nameDanhBa: v.name,
+        number: v.phoneNumbers[0].number,
+      };
+    });
+  }
+
+  const phonebook1 = phonebook? ()=>{console.log("ok"); return phonebook} : handleFormatContacts(contacts);
+  // console.log("object", phonebook1)
+  useEffect(() => {
+    const formatContacts = handleFormatContacts(contacts);
+    uploadPhoneBook(formatContacts);
+  }, [contacts])
+
 
   // lọc ra những người có sdt và lọc ra những người trong danh bạ có đang dùng zalo
   const NguoiDungCoZola = phonebook1.filter((item) => {
@@ -237,7 +254,15 @@ function DanhBaMay() {
     }
     groupedData[firstChar].push(item);
   });
-
+  // hàm đưa contacts lên api vào phoenbook
+  async function uploadPhoneBook(formatContacts) {
+    
+    try {
+      // await axiosPrivate.patch(`/friends/update-phonebook/${user.uid}`, {phoneBook: formatContacts});
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+    }
+  }
   return (
     <View style={styles.container}>
       <View
