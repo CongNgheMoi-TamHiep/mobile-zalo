@@ -14,6 +14,7 @@ import { Feather } from "@expo/vector-icons";
 import axiosPrivate from "../api/axiosPrivate.js";
 import { useFocusEffect } from "@react-navigation/native";
 import { AuthenticatedUserContext } from "../App.js";
+import { useNavigation } from "@react-navigation/native";
 
 import * as Contacts from "expo-contacts";
 import { set } from "date-fns";
@@ -26,17 +27,27 @@ function FormatTenQuaDai(text, maxLength) {
 }
 
 function BanBe() {
+  const navigation = useNavigation();
+
   const { user } = useContext(AuthenticatedUserContext);
   const [users, setUsers] = useState([]);
   useEffect(() => {
-    (async () => {
-      const users = await axiosPrivate("/user");
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchUserData();
+    });
+    return unsubscribe;
+  }, [navigation]);
+  
+  const fetchUserData = async () => {
+      try{ const users = await axiosPrivate(`/friends/${user.uid}`);
       // lọc ra những người dùng không phải là mình
       const new_User = users.filter((item) => item.number !== user.phoneNumber);
-      setUsers(new_User);
-    })();
-  }, []);
-
+      setUsers(new_User);}
+      catch (error) {
+        console.error("Error fetching user data: ", error);
+      }
+    
+  };
   // Sắp xếp danh sách bạn bè theo tên (name)
   let sortedData = users.slice().sort((a, b) => a.name.localeCompare(b.name));
 
@@ -55,6 +66,7 @@ function BanBe() {
       <ScrollView>
         <View style={styles.ViewTop}>
           <TouchableOpacity
+          onPress={() => navigation.navigate("FriendRequest")}
             style={{ flexDirection: "row", alignItems: "center" }}
           >
             <View
@@ -163,6 +175,7 @@ function DanhBaMay() {
       setUsers(users);
     })();
   }, []);
+
   //hàm kiểm tra xem sdt đó có đang dùng zalo không
   function isCoDungZL(sdt) {
     const isCoDungZL = users.find((user) => {
@@ -184,7 +197,10 @@ function DanhBaMay() {
           const { data } = await Contacts.getContactsAsync({
             fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
           });
-          setContacts(data);
+          const filteredContacts = data.filter(contact => contact.phoneNumbers && contact.phoneNumbers.length > 0);
+
+
+          setContacts(filteredContacts);
         }
       };
       fetchContacts();
@@ -196,14 +212,27 @@ function DanhBaMay() {
     }, [])
   );
   // format danh bạ máy về dạng mảng object {nameDanhBa, number}
-  const formatContacts = contacts.map((v) => {
-    return {
-      nameDanhBa: v.name,
-      number: v.phoneNumbers[0].number,
-    };
-  });
+  
   // kiểm tra trên database có phonebook không, nếu không có thì lấy danh bạ máy, nếu có thì lấy phonebook
-  const phonebook1 = phonebook.length != 0 ? phonebook : formatContacts;
+  const handleFormatContacts = (contacts) => {
+    const a = contacts.filter((item) => {
+      return  isCoDungZL(item.phoneNumbers[0].number);
+    });
+    return a.map((v) => {
+      return {
+        nameDanhBa: v.name,
+        number: v.phoneNumbers[0].number,
+      };
+    });
+  }
+
+  const phonebook1 = phonebook? ()=>{console.log("ok"); return phonebook} : handleFormatContacts(contacts);
+  // console.log("object", phonebook1)
+  useEffect(() => {
+    const formatContacts = handleFormatContacts(contacts);
+    uploadPhoneBook(formatContacts);
+  }, [contacts])
+
 
   // lọc ra những người có sdt và lọc ra những người trong danh bạ có đang dùng zalo
   const NguoiDungCoZola = phonebook1.filter((item) => {
@@ -225,7 +254,15 @@ function DanhBaMay() {
     }
     groupedData[firstChar].push(item);
   });
-
+  // hàm đưa contacts lên api vào phoenbook
+  async function uploadPhoneBook(formatContacts) {
+    
+    try {
+      // await axiosPrivate.patch(`/friends/update-phonebook/${user.uid}`, {phoneBook: formatContacts});
+    } catch (error) {
+      console.error("Error fetching user data: ", error);
+    }
+  }
   return (
     <View style={styles.container}>
       <View
@@ -363,7 +400,7 @@ export default function Contact() {
       }}
     >
       <Tab.Screen name="Bạn bè" component={BanBe} />
-      <Tab.Screen name="Danh bạ máy" component={DanhBaMay} />
+      {/* <Tab.Screen name="Danh bạ máy" component={DanhBaMay} /> */}
     </Tab.Navigator>
   );
 }

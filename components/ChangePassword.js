@@ -49,6 +49,7 @@ export default function User({ navigation }) {
   }, [matKhauMoi.length, matKhauHienTai.length, xacNhanMatKhau.length]);
   // thông tin user hiện tại lưu trên firebase
   const user = auth.currentUser;
+  console.log("usser", user);
   async function ChangePass() {
     const regexPass =
       /^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/])[A-Za-z\d!@#$%^&*()-_+=|\\{}\[\]:;'"<>,.?/]{8,}$/;

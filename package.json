@@ -39,6 +39,7 @@
     "libphonenumber-js": "^1.10.53",
     "lottie-react-native": "5.1.6",
     "mime": "^4.0.1",
+    "query-string": "^9.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "react-native": "0.72.6",
