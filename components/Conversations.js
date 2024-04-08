@@ -25,7 +25,7 @@ export default function Conversations({ route, navigation }) {
     const currentUser = useCurrentUser(); 
     const [chatReceived, setChatReceived] = useState(null);
     const [me, setMe] = useState(null); 
-    const socket = useSocket();  
+    const {socket} = useSocket();  
     useEffect(()=> {
         const user = axiosPrivate.get(`/user/${currentUser.user.uid}`)
         setMe(user);
@@ -41,6 +41,17 @@ export default function Conversations({ route, navigation }) {
           setChatReceived(chat); 
         })
       }, []);
+    useEffect(() => {
+        console.log("hellow asdfsa")
+        socket.on('receiveFriendRequest', (data) => {
+            console.log('receiveFriendRequest: '); 
+            console.log(data); 
+            // show model in 4s... 
+        })
+      }, [])
+    
+    
+
 
     useEffect(() => {
         if (chatReceived) {

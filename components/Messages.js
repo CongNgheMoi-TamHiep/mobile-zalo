@@ -15,7 +15,7 @@ export default function Chat({ navigation }) {
     //  danh sách các cuộc  hội thoại
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-    const socket = useSocket(); 
+    const {socket} = useSocket(); 
     const [chatReceived, setChatReceived] = useState(null);
     useEffect(() => {
         socket.on("getMessage", (chat) => {

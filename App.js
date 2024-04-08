@@ -20,13 +20,14 @@ import AddInfoUser from "./components/AddInfoUser";
 const Stack = createNativeStackNavigator();
 const AuthenticatedUserContext = createContext({});
 import { getAuth } from "firebase/auth";
-import SocketProvider from "./context/SocketProvider";
+import SocketProvider, { useSocket } from "./context/SocketProvider";
 import ForgetPassword from "./components/ForgetPassword.js";
 import UserInformation from "./components/UserInformation.js";
 import ChangePassword from "./components/ChangePassword.js";
 import ForgetPasswordOTP from "./components/ForgetPasswordOTP.js";
 import QRCode from "./components/QRCode.js";
 import FriendRequest from "./components/FriendRequest.js";
+import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js";
 // ...
 
 const auth = getAuth();
@@ -35,12 +36,17 @@ const AuthenticatedUserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   return (
     <AuthenticatedUserContext.Provider value={{ user, setUser }}>
-      <SocketProvider>{children}</SocketProvider>
+      <SocketProvider>
+        <ShowModelProvider>
+          {children}
+        </ShowModelProvider>
+      </SocketProvider>
     </AuthenticatedUserContext.Provider>
   );
 };
 
 function ChatStack() {
+
   return (
     <SafeAreaView style={{ flex: 1 }}>
       <Stack.Navigator>
@@ -224,7 +230,7 @@ function RootNavigator() {
       </View>
     );
   }
-
+  
   return (
     <NavigationContainer>
       {user ? <ChatStack /> : <AuthStack />}
@@ -233,12 +239,6 @@ function RootNavigator() {
 }
 
 export default function App() {
-  // useEffect(() => {
-  //   (async () => {
-  //     await signOut(auth);
-  //     console.log(auth.currentUser);
-  //   })();
-  // }, [])
   return (
     <AuthenticatedUserProvider>
       <RootNavigator />
