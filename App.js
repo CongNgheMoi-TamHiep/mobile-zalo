@@ -29,6 +29,8 @@ import QRCode from "./components/QRCode.js";
 import FriendRequest from "./components/FriendRequest.js";
 import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js";
 import ForwardMessage from "./components/ForwardMessage.js";
+import DanhBaMay from "./components/DanhBaMay.js";
+// ...
 
 const auth = getAuth();
 
@@ -99,6 +101,18 @@ function ChatStack() {
         options={{
           headerShown: true,
           title: "Lời mời kết bạn",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
+      <Stack.Screen
+        name="DanhBaMay"
+        component={DanhBaMay}
+        options={{
+          headerShown: true,
+          title: "Danh bạ máy",
           headerStyle: {
             backgroundColor: "#00aaff",
           },
