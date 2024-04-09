@@ -28,7 +28,7 @@ import ForgetPasswordOTP from "./components/ForgetPasswordOTP.js";
 import QRCode from "./components/QRCode.js";
 import FriendRequest from "./components/FriendRequest.js";
 import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js";
-// ...
+import ForwardMessage from "./components/ForwardMessage.js";
 
 const auth = getAuth();
 

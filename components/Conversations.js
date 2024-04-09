@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect, useRef, useEffect, useContext } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from "react-native";
 import { GiftedChat, Send, Bubble } from "react-native-gifted-chat";
 import { InputToolbar } from "react-native-gifted-chat";
 import * as ImagePicker from 'expo-image-picker';
@@ -16,6 +16,7 @@ import mime from "mime";
 import Modal from "react-native-modal";
 import { set } from "date-fns";
 import * as DocumentPicker from 'expo-document-picker';
+
 
 export default function Conversations({ route, navigation }) {
 
@@ -45,9 +46,12 @@ export default function Conversations({ route, navigation }) {
     const [conversation, setConversation] = useState({});
     const currentUser = useCurrentUser();
     const [chatReceived, setChatReceived] = useState(null);
-    const [me, setMe] = useState(null); 
-    const {socket} = useSocket();  
-    useEffect(()=> {
+    const [me, setMe] = useState(null);
+    const { socket } = useSocket();
+
+
+    // =======================socket=======================
+    useEffect(() => {
         const user = axiosPrivate.get(`/user/${currentUser.user.uid}`)
         setMe(user);
     }, [])
@@ -61,24 +65,27 @@ export default function Conversations({ route, navigation }) {
         socket.on("getMessage", (chat) => {
             setChatReceived(chat);
         })
-      }, []);
+    }, []);
     useEffect(() => {
-        console.log("hellow asdfsa")
         socket.on('receiveFriendRequest', (data) => {
-            console.log('receiveFriendRequest: '); 
-            console.log(data); 
+            console.log('receiveFriendRequest: ');
+            console.log(data);
             // show model in 4s... 
         })
-      }, [])
-    
-    
+    }, [])
+
+
 
 
     useEffect(() => {
         if (chatReceived) {
+            const { text, video, image, file } = chatReceived.content;
             const newMessage = {
                 _id: chatReceived?._id || chatReceived.createdAt,
-                text: chatReceived.content.text,
+                ...(text && { text }),
+                ...(image && { image }),
+                ...(video && { video }),
+                ...(file && { file }),
                 createdAt: new Date(chatReceived.createdAt),
                 user: {
                     _id: chatReceived.senderInfo._id,
@@ -98,18 +105,22 @@ export default function Conversations({ route, navigation }) {
             if (conversationId) {
                 const chats = await axiosPrivate.get(`/chat/${conversationId}`);
                 // console.log("chat sau khi lay api vee bang conversation id ==============================")
-                const formattedMessages = chats.map(message => ({
-                    _id: message._id,
-                    text: message.content.text,
-                    image: message.content.image,
-                    video: message.content.video,
-                    createdAt: new Date(message.createdAt),
-                    user: {
-                        _id: message.senderInfo._id,
-                        name: message.senderInfo.name,
-                        avatar: message.senderInfo.avatar
+                const formattedMessages = chats.map(message => {
+                    const { text, video, image, file } = message.content;
+                    return {
+                        _id: message._id,
+                        ...(text && { text }),
+                        ...(image && { image }),
+                        ...(video && { video }),
+                        ...(file && { file }),
+                        createdAt: new Date(message.createdAt),
+                        user: {
+                            _id: message.senderInfo._id,
+                            name: message.senderInfo.name,
+                            avatar: message.senderInfo.avatar
+                        }
                     }
-                }));
+                });
                 // console.log("Format messageeeeeeeeeeeeeeeeeee:")
                 // console.log(chats)
                 setMessages(formattedMessages.reverse());
@@ -121,7 +132,7 @@ export default function Conversations({ route, navigation }) {
     }, [])
 
 
-    // Xử lí thu hồi tin nhắn
+    // ========================================Xử lí thu hồi tin nhắn
 
     // Thu hồi phía mình
     const deleteMessage = async () => {
@@ -160,7 +171,7 @@ export default function Conversations({ route, navigation }) {
     // const [isPlaying, setIsPlaying] = useState(false);
     // const [status, setStatus] = useState({});
 
-    // cập nhật trạng thái phát lại của video
+    // ==========================================cập nhật trạng thái phát lại của video
     const onPlaybackStatusUpdate = (status) => {
         if (!status.isLoaded) {
             // xử lý nếu cần khi video chưa load
@@ -169,7 +180,7 @@ export default function Conversations({ route, navigation }) {
 
             if (status.didJustFinish) {
                 // Nếu video vừa chạy xong, đặt lại vị trí phát lại về đầu
-                videoRef.current.setPositionAsync(0);
+                videoRef.current.replayAsync();
             }
         }
     };
@@ -219,16 +230,13 @@ export default function Conversations({ route, navigation }) {
     const onSendMedia = async () => {
         const result = await ImagePicker.launchImageLibraryAsync({
             mediaTypes: ImagePicker.MediaTypeOptions.All,
-            // allowsEditing: true,
-            // base64: false, // disable base64 encoding
-            // aspect: [0, 0], // set aspect ratio to 0 to keep original size
             aspect: [0, 0],
             quality: 1,
             multiple: true,
             allowsMultipleSelection: true
         });
 
-        console.log("ImagePicker result:", result);
+        // console.log("ImagePicker result:", result);
 
         if (result.cancelled) {
             return;
@@ -245,6 +253,9 @@ export default function Conversations({ route, navigation }) {
             name: filename,
             type: mime.getType(localUri)
         });
+
+        console.log('formData:');
+        console.log(formData._parts[0][1]);
 
         if (formData) {
             await axiosPrivate.post('/chat/files', formData, {
@@ -276,7 +287,7 @@ export default function Conversations({ route, navigation }) {
         });
 
         // console.log("Selected media:", selectedMedia);
-        onSend(selectedMedia);
+        // onSend(selectedMedia);
 
     };
 
@@ -349,21 +360,189 @@ export default function Conversations({ route, navigation }) {
     const pickDocument = async () => {
         try {
             const document = await DocumentPicker.getDocumentAsync();
-            console.log('Document picked:', document);
-            // if (document.type === 'success') {
-            //     console.log('Document picked:', document);
-            //     // Xử lý tệp đã chọn ở đây
-            // }
+
+
+            const formData = new FormData();
+            formData.append("file", {
+                uri: document.assets[0].uri,
+                name: document.assets[0].name,
+                type: mime.getType(document.assets[0].uri)
+            });
+
+            console.log('formData:');
+            console.log(formData._parts[0][1]);
+
+            if (formData) {
+                await axiosPrivate.post('/chat/files', formData, {
+                    params: {
+                        type: 'file',
+                        senderId: currentUser.user.uid,
+                        conversationId: conversationInfo?.conversationId
+                    },
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Accept: "application/json",
+                    }
+                })
+                console.log("up file thanh cong!");
+            }
+
+            const newMessage = {
+                _id: Math.random().toString(),
+                name: document.assets[0].name, // ID duy nhất
+                type: document.assets[0].mimeType, // Đường dẫn của tập tin được chọn
+                file: document.assets[0].uri,
+                size: document.assets[0].size,
+                createdAt: new Date(), // Thời gian gửi tin nhắn
+                user: {
+                    _id: currentUser.user.uid,
+                }, // Người gửi tin nhắn
+            };
+
+            // setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
+            // onSend([newMessage]);
+
         } catch (error) {
             console.error('Error picking document:', error);
         }
+    };
+
+    // Hàm render tin nhắn tùy chỉnh
+    const renderCustomMessage = (props) => {
+        const { text, image, video, file } = props.currentMessage;
+        const files = [
+            'application/pdf',
+            'application/msword',
+        ];
+        const fileTypeDocument = mime.getType(file?.url);
+
+
+
+        // Kiểm tra nếu là tin nhắn hình ảnh
+        if (image || fileTypeDocument === 'image/jpeg' || fileTypeDocument === 'image/png') {
+            return (
+                <TouchableOpacity
+                    style={{ width: 300, height: 300, marginLeft: '27%' }}
+                    onLongPress={() => {
+                        setSelectedMessage(props.currentMessage);
+                        setModalImageVisible(true);
+                    }}
+                >
+                    <Image
+                        source={{ uri: image }}
+                        style={{ width: 250, height: 280, borderRadius: 20, paddingTop: 5, paddingBottom: 5 }}
+                        resizeMode="cover"
+                    />
+                </TouchableOpacity>
+            );
+        }
+
+        // Kiểm tra nếu là tin nhắn video
+        if (video || fileTypeDocument === 'video/mp4') {
+            return (
+                <View style={{ width: 300, height: 300, overflow: 'hidden', flexDirection: 'row', marginLeft: '18%' }}>
+                    <TouchableOpacity
+                        style={{ width: 30, height: '100%', justifyContent: "center" }}
+                        onPress={() => {
+                            setSelectedMessage(props.currentMessage);
+                            setModalVideoVisible(true);
+                        }}
+                    >
+                        <Entypo name="dots-three-horizontal" size={24} color="black" />
+                    </TouchableOpacity>
+                    <Video
+                        ref={videoRef}
+                        source={{ uri: video ? video : file?.url }}
+                        style={{ width: 250, height: 280, backgroundColor: '#000', borderRadius: 20, paddingTop: 5, paddingBottom: 5 }}
+                        resizeMode="cover"
+                        useNativeControls
+                        // onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+                        isLooping
+                    />
+                </View>
+            );
+        }
+
+        
+        // Kiểm tra nếu là tin nhắn document (PDF)
+        if (file?.url) {
+            // console.log("fileTypeDocument: ", fileTypeDocument);
+            const icons = {
+                'application/pdf': require('../assets/pdf-icon.png'),
+                'application/msword': require('../assets/word-icon.png'),
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document": require('../assets/word-icon.png'),
+                "application/vnd.ms-powerpoint": require('../assets/ppt-icon.png'),
+                "application/vnd.openxmlformats-officedocument.presentationml.presentation": require('../assets/ppt-icon.png'),
+                "application/vnd.rar": require('../assets/rar-icon.png'),
+                "application/zip": require('../assets/rar-icon.png'),
+                "text/csv": require('../assets/csv-icon.png'),
+            }
+            return (
+                <TouchableOpacity
+                    onLongPress={() => {
+                        setSelectedMessage(props.currentMessage);
+                        setModalVisible(true);
+                    }}
+                    onPress={() => Linking.openURL(file.url)}
+                    style={{ width: '70%', height: 60, marginBottom: 5, marginLeft: '0%', marginLeft: '27%', backgroundColor: 'grey', borderRadius: 10, justifyContent: 'center' }}
+                >
+                    <View
+                        style={{ width: '100%', height: '100%', flexDirection: 'row' }}
+                    >
+                        <View style={{ width: '30%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                            <Image
+                                source={icons[fileTypeDocument] || require('../assets/pdf-icon.png')}
+                                style={{ width: 40, height: 40 }}
+                            />
+                        </View>
+                        <View style={{ width: '70%', height: '100%', justifyContent: 'center' }}>
+                            <Text
+                                style={{ color: '#FFF', fontSize: 16, fontWeight: '500' }}
+                                numberOfLines={2}
+                            >
+                                {file.name} File -
+                                {file.size} kb
+                            </Text>
+                        </View>
+
+                    </View>
+                </TouchableOpacity>
+            );
+        }
+
+        // Nếu không phải loại tin nhắn tùy chỉnh, sử dụng Bubble mặc định
+        return (
+            <Bubble
+                {...props}
+                wrapperStyle={{
+                    right: {
+                        // Thêm margin cho các text bên phải
+                        marginBottom: 5,
+                        backgroundColor: '#0084FF',
+                    },
+                    left: {
+                        // Thêm margin cho các text bên trái
+                        marginBottom: 5,
+                        backgroundColor: '#fff',
+                    },
+                }}
+                textStyle={{
+                    right: {
+                        color: '#fff'
+                    },
+                    left: {
+                        color: '#000'
+                    }
+                }}
+            />
+        )
     };
 
 
     // xử lí khi gửi dữ liệu
     const onSend = async (newMessages = []) => {
         const updatedMessages = newMessages.map(message => {
-            const { type, image, video, ...rest } = message;
+            const { type, image, video, file, ...rest } = message;
 
             // Kiểm tra kiểu phương tiện và xử lý dữ liệu tương ứng
             if (type === 'image') {
@@ -376,48 +555,48 @@ export default function Conversations({ route, navigation }) {
                     ...rest,
                     video,
                 };
+            } else if (type === 'application/pdf') {
+                return {
+                    ...rest,
+                    document: file,
+                    type: 'document',
+                };
             }
 
             // Xử lý các trường hợp khác (nếu có)
             return message;
         });
 
-        setMessages(previousMessages => GiftedChat.append(previousMessages, updatedMessages));
+        console.log("updatedMessages: ", updatedMessages);
 
-        // const { text } = { ...updatedMessages[0] };
+        // setMessages(previousMessages => GiftedChat.append(previousMessages, updatedMessages));
 
-        // socket.emit("sendMessage", {
-        //     conversationId: conversationInfo?.conversationId || combineUserId(currentUser.user.uid, searchUser?._id),
-        //     senderInfo: {
-        //         _id: currentUser.user.uid,
-        //         name: me.name,
-        //         avatar: me.avatar,
-        //     },
-        //     content: { text },
-        //     createdAt: new Date(),
-        // });
-        // // trường hợp chọn vào userConversation
-        // let conversationId = conversationInfo?.conversationId;
-        // if (conversationId) {
-        //     // do nothing for now
-        //     const chat = await axiosPrivate.post(`/chat`, {
-        //         conversationId,
-        //         senderId: currentUser.user.uid,
-        //         content: { text }
-        //     });
-        //     console.log("chat: ");
-        //     console.log(chat);
-        // } else if (searchUser?._id) {
-        //     const chat = await axiosPrivate.post(`/chat`, {
-        //         receiverId: searchUser._id,
-        //         senderId: currentUser.user.uid,
-        //         content: { text }
-        //     });
-        //     console.log("chat: ");
-        //     console.log(chat);
-        // } else {
-        //     console.log("bug!!!!")
-        // }
+        const { text } = { ...updatedMessages[0] };
+
+        // trường hợp chọn vào userConversation
+        let conversationId = conversationInfo?.conversationId;
+        if (conversationId) {
+            // do nothing for now
+            const chat = await axiosPrivate.post(`/chat`, {
+                conversationId,
+                senderId: currentUser.user.uid,
+                content: {
+                    ...(text && { text }),
+                }
+            });
+            console.log("chat: ");
+            console.log(chat);
+        } else if (searchUser?._id) {
+            const chat = await axiosPrivate.post(`/chat`, {
+                receiverId: searchUser._id,
+                senderId: currentUser.user.uid,
+                content: { text }
+            });
+            console.log("chat: ");
+            console.log(chat);
+        } else {
+            console.log("bug!!!!")
+        }
     };
 
     //  gửi image
@@ -517,7 +696,7 @@ export default function Conversations({ route, navigation }) {
     const renderBubble = (props) => {
         const { user, createdAt, text, image, video, messageId } = props.currentMessage;
 
-        // Kiểm tra nếu là tin nhắn hình ảnh
+        // // Kiểm tra nếu là tin nhắn hình ảnh
         if (image) {
             return (
                 <Bubble
@@ -541,24 +720,6 @@ export default function Conversations({ route, navigation }) {
         }
 
         if (video) {
-            // return (
-            //     <Bubble
-            //         {...props}
-            //         videoStyle={{
-            //             width: 250,
-            //             height: 300,
-            //             borderRadius: 0,
-            //         }}
-            //         wrapperStyle={{
-            //             right: {
-            //                 backgroundColor: '#F2F2F2'
-            //             },
-            //             left: {
-            //                 backgroundColor: '#fff'
-            //             }
-            //         }}
-            //     />
-            // );
             return (
                 <View style={{ width: 280, height: 300, overflow: 'hidden', flexDirection: 'row' }}>
                     <TouchableOpacity
@@ -571,11 +732,13 @@ export default function Conversations({ route, navigation }) {
                         <Entypo name="dots-three-horizontal" size={24} color="black" />
                     </TouchableOpacity>
                     <Video
+                        ref={videoRef}
                         source={{ uri: video }}
                         style={{ width: 250, height: '100%', backgroundColor: '#000', borderRadius: 20 }}
                         resizeMode="cover"
                         useNativeControls
-                    // onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+                        // onPlaybackStatusUpdate={onPlaybackStatusUpdate}
+                        isLooping
                     />
                 </View>
             );
@@ -643,17 +806,18 @@ export default function Conversations({ route, navigation }) {
                     _id: currentUser.user.uid,
                 }}
                 timeTextStyle={{ left: { color: '#95999A' }, right: { color: '#F0F0F0' } }} // Màu của thời gian
-                renderBubble={renderBubble} // custom màu bóng chat 
+                // renderBubble={renderBubble} // custom màu bóng chat 
                 renderSend={renderSend} // custom icon gửi thay vì chữ SEND
+                renderMessage={renderCustomMessage} // custom tin nhắn
                 // renderMessageVideo={renderMessageVideo} // dùng để gửi video
-                renderMessageImage={(props) => (
-                    <CustomImage
-                        {...props}
-                        imageUrl={props.currentMessage.image}
-                        onLongPress={() => handleImageLongPress(props.context, props.currentMessage)}
-                    />
+                // renderMessageImage={(props) => (
+                //     <CustomImage
+                //         {...props}
+                //         imageUrl={props.currentMessage.image}
+                //         onLongPress={() => handleImageLongPress(props.context, props.currentMessage)}
+                //     />
 
-                )} // dùng để gửi image
+                // )} // dùng để gửi image
                 renderUsernameOnMessage={true} // hiện tên người gửi bên dưới nội dung
                 renderInputToolbar={renderInputToolBar} // custom thanh bar của tin nhắn
                 // renderActions={renderAction} // chỉnh icon kế bên ô nhập tin nhắn
@@ -694,7 +858,7 @@ export default function Conversations({ route, navigation }) {
                         <TouchableOpacity
                             style={{ width: 55, height: 60, alignItems: 'center' }}
                             onPress={() => {
-                                navigation.navigate('ForwardMessage', { message: selectedMessage });
+                                navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
                                 setModalVisible(false);
                             }}
                         >
@@ -813,7 +977,13 @@ export default function Conversations({ route, navigation }) {
                                 Reply
                             </Text>
                         </View>
-                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                        <TouchableOpacity
+                            style={{ width: 55, height: 60, alignItems: 'center' }}
+                            onPress={() => {
+                                navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                setModalImageVisible(false);
+                            }}
+                        >
                             <Image
                                 source={require('../assets/arrow.png')}
                                 style={{ width: 32, height: 32 }}
@@ -821,7 +991,7 @@ export default function Conversations({ route, navigation }) {
                             <Text>
                                 Forward
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             style={{ width: 55, height: 60, alignItems: 'center' }}
                             onPress={unsendMessage}
@@ -930,7 +1100,13 @@ export default function Conversations({ route, navigation }) {
                                 Reply
                             </Text>
                         </View>
-                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                        <TouchableOpacity
+                            style={{ width: 55, height: 60, alignItems: 'center' }}
+                            onPress={() => {
+                                navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                setModalVideoVisible(false);
+                            }}
+                        >
                             <Image
                                 source={require('../assets/arrow.png')}
                                 style={{ width: 32, height: 32 }}
@@ -938,7 +1114,7 @@ export default function Conversations({ route, navigation }) {
                             <Text>
                                 Forward
                             </Text>
-                        </View>
+                        </TouchableOpacity>
                         <TouchableOpacity
                             style={{ width: 55, height: 60, alignItems: 'center' }}
                             onPress={unsendMessage}
