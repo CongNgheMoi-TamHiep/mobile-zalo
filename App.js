@@ -28,6 +28,7 @@ import ForgetPasswordOTP from "./components/ForgetPasswordOTP.js";
 import QRCode from "./components/QRCode.js";
 import FriendRequest from "./components/FriendRequest.js";
 import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js";
+import ForwardMessage from "./components/ForwardMessage.js";
 import DanhBaMay from "./components/DanhBaMay.js";
 // ...
 
@@ -54,6 +55,11 @@ function ChatStack() {
         <Stack.Screen
           name="MyTabs"
           component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ForwardMessage"
+          component={ForwardMessage}
           options={{ headerShown: false }}
         />
         <Stack.Screen

@@ -19,7 +19,7 @@ export default function Chat({ navigation }) {
     const [chatReceived, setChatReceived] = useState(null);
     useEffect(() => {
         socket.on("getMessage", (chat) => {
-          setChatReceived(chat); 
+            setChatReceived(chat);
         })
     }, []);
     useEffect(() => {
@@ -78,7 +78,7 @@ export default function Chat({ navigation }) {
     // render lên màn hình các đoạn chat của user
     const renderItem = ({ item }) => {
 
-        const isNew = item?.conversationId === chatReceived?.conversationId; 
+        const isNew = item?.conversationId === chatReceived?.conversationId;
         return (
             <TouchableOpacity
                 style={styles.viewOfFlatlist}
@@ -113,7 +113,12 @@ export default function Chat({ navigation }) {
                         {item?.user?.name || item?.name}
                     </Text>
                     <Text style={{ fontSize: 16, color: "grey" }}>
-                        { (isNew && chatReceived?.content.text) || item?.lastMess.content.text}
+                        {/* {(isNew && chatReceived?.content?.text) || item?.lastMess.content?.text} */}
+                        {
+                            ((isNew && chatReceived?.content?.text) || item?.lastMess.content?.text)?.length > 44 ?
+                                (((isNew && chatReceived?.content?.text) || item?.lastMess.content?.text)?.substring(0, 44) + '...') :
+                                ((isNew && chatReceived?.content?.text) || item?.lastMess.content?.text)
+                        }
                     </Text>
                 </View>
                 <View
@@ -126,7 +131,7 @@ export default function Chat({ navigation }) {
                     }}
                 >
                     <Text style={{ color: "grey", fontSize: 14 }}>
-                        {formatTimeSendMessage( (isNew && chatReceived?.createdAt) || item?.lastMess.createdAt)}
+                        {formatTimeSendMessage((isNew && chatReceived?.createdAt) || item?.lastMess.createdAt)}
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -137,6 +142,9 @@ export default function Chat({ navigation }) {
         <View style={styles.container}>
             <View style={{ width: "100%" }}>
                 <FlatList
+                    style={{
+                        height: '100%'
+                    }}
                     data={data}
                     renderItem={renderItem}
                     keyExtractor={(item) => item?.conversationId}
