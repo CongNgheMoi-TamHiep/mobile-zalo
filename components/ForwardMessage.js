@@ -32,8 +32,21 @@ export default function ForwardMessage({ route, navigation }) {
 
     useEffect(() => {
         (async () => {
-            const response = await axiosPrivate.get(`/friends/${currentUser.user.uid}`);
-            setData(response);
+            const fetchData = async () => {
+                try {
+                    const response = await axiosPrivate.get(`/friends/${currentUser.user.uid}`);
+                    console.log("danh sach ban be: ", response);
+                    setData(response);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                }
+            };
+
+            // Gọi hàm fetch data khi component được render lại
+            fetchData();
+            // const response = await axiosPrivate.get(`/friends/${currentUser.user.uid}`);
+            // setData(response);
+            // console.log(response);
         })();
     }, []);
     // cap nhat so nguoi chọn
@@ -44,15 +57,21 @@ export default function ForwardMessage({ route, navigation }) {
 
     // console.log("danh sach ban be da chon:", selectedIds)
     // xu li chon nguoi de chia se tin nhan
-    const handleCheckboxToggle = (id) => {
-        if (selectedIds.includes(id)) {
-            // Nếu ID đã tồn tại trong danh sách, loại bỏ nó
-            setSelectedIds(selectedIds.filter(itemId => itemId !== id));
-        } else {
-            // Nếu ID chưa tồn tại trong danh sách, thêm vào
-            setSelectedIds([...selectedIds, id]);
-            // setIsVisibleModal(true);
-        }
+    // const handleCheckboxToggle = (id) => {
+    //     if (selectedIds.includes(id)) {
+    //         // Nếu ID đã tồn tại trong danh sách, loại bỏ nó
+    //         setSelectedIds(selectedIds.filter(itemId => itemId !== id));
+    //     } else {
+    //         // Nếu ID chưa tồn tại trong danh sách, thêm vào
+    //         setSelectedIds([...selectedIds, id]);
+    //         // setIsVisibleModal(true);
+    //     }
+    // };
+    const handleCheckboxToggle = (userId) => {
+        const newSelectedIds = selectedIds.includes(userId)
+            ? selectedIds.filter(id => id !== userId) // Bỏ chọn nếu đã chọn trước đó
+            : [...selectedIds, userId]; // Chọn nếu chưa được chọn trước đó
+        setSelectedIds(newSelectedIds);
     };
 
     // xử lí chia sẻ tin nhắn cho bạn bè
@@ -84,43 +103,42 @@ export default function ForwardMessage({ route, navigation }) {
 
 
     const renderFriends = ({ item }) => {
-        return (
+        return (<TouchableOpacity
+            style={{ width: '100%', height: 50, flexDirection: 'row', marginBottom: 10}}
+            onPress={() => {
+                setSelection(!isSelected);
+                handleCheckboxToggle(item.userId);
+            }}
+            key={item.userId}
+        >
             <TouchableOpacity
-                style={{ width: '100%', height: '100%', flexDirection: 'row' }}
-                onPress={() => {
-                    setSelection(!isSelected);
-                    handleCheckboxToggle(item.userId);
+                style={{
+                    width: '15%', height: 50, alignItems: 'center', justifyContent: 'center'
                 }}
             >
-                <TouchableOpacity
-                    style={{
-                        width: '15%', height: 50, alignItems: 'center', justifyContent: 'center'
-                    }}
-                >
-                    <CheckBox
-                        value={isSelected}
-                        isChecked={selectedIds.includes(item.userId)}
+                <CheckBox
+                    value={isSelected}
+                    isChecked={selectedIds.includes(item.userId)}
                     onClick={() => {
                         setSelection(!isSelected);
                         handleCheckboxToggle(item.userId);
                     }}
-                    />
-                </TouchableOpacity>
-                <View style={{ width: '15%', height: 50, justifyContent: 'center', alignItems: 'center' }}>
-                    <Image
-                        source={{ uri: item.avatar }}
-                        style={{ width: 50, height: 50, borderRadius: 50 }}
-                    />
-                </View>
-                <View style={{ width: '70%', height: 50, justifyContent: 'center' }}>
-                    <Text
-                        style={{ fontSize: 14, fontWeight: '500', width: '100%', marginLeft: 10 }}
-                    >
-                        {item.name}
-                    </Text>
-                </View>
+                />
             </TouchableOpacity>
-        )
+            <View style={{ width: '15%', height: 50, justifyContent: 'center', alignItems: 'center' }}>
+                <Image
+                    source={{ uri: item.avatar }}
+                    style={{ width: 50, height: 50, borderRadius: 50 }}
+                />
+            </View>
+            <View style={{ width: '70%', height: 50, justifyContent: 'center' }}>
+                <Text
+                    style={{ fontSize: 14, fontWeight: '500', width: '100%', marginLeft: 10 }}
+                >
+                    {item.name}
+                </Text>
+            </View>
+        </TouchableOpacity>)
     }
 
     return (
@@ -180,11 +198,11 @@ export default function ForwardMessage({ route, navigation }) {
                     </Text>
                 </View>
                 <View style={{ width: '100%', height: '90%' }}>
-                    <FlatList
-                        data={data}
-                        renderItem={renderFriends}
-                        keyExtractor={item => item}
-                    />
+                    {
+                        data.map((item) => {
+                            return renderFriends({ item });
+                        })
+                    }
                 </View>
             </View>
             {selectedCount > 0 ? (
