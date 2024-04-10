@@ -48,7 +48,7 @@ export default function Conversations({ route, navigation }) {
     const [chatReceived, setChatReceived] = useState(null);
     const [me, setMe] = useState(null);
     const { socket } = useSocket();
-
+    const [deletedChatId, setDeletedChatId] = useState(null);
 
     // =======================socket=======================
     useEffect(() => {
@@ -64,28 +64,46 @@ export default function Conversations({ route, navigation }) {
     useEffect(() => {
         socket.on("getMessage", (chat) => {
             setChatReceived(chat);
+            console.log("chat sockett");
+            console.log(chat);
+        })
+        socket.on("deleteMessage", (chatId) => {
+            setDeletedChatId(chatId);
         })
     }, []);
+
     useEffect(() => {
-        socket.on('receiveFriendRequest', (data) => {
-            console.log('receiveFriendRequest: ');
-            console.log(data);
-            // show model in 4s... 
-        })
-    }, [])
-
-
-
+        if (deletedChatId) {
+            console.log("deleted chat id: ", deletedChatId);
+            // edit content of deletedChatId to "The message has been recalled!"
+            const newMessages = messages.map(message => {
+                if (message._id === deletedChatId) {
+                    return {
+                        // ...message,
+                        _id: message._id,
+                        user: message.user,
+                        text: "The message has been recalled!",
+                        type: "deleted",
+                        createdAt: message.createdAt,
+                    }
+                }
+                return message;
+            })
+            setMessages(newMessages);
+        }
+    }, [deletedChatId]);
 
     useEffect(() => {
         if (chatReceived) {
             const { text, video, image, file } = chatReceived.content;
+            const {type} = chatReceived;
             const newMessage = {
                 _id: chatReceived?._id || chatReceived.createdAt,
                 ...(text && { text }),
                 ...(image && { image }),
                 ...(video && { video }),
                 ...(file && { file }),
+                ...(type && {type}),
                 createdAt: new Date(chatReceived.createdAt),
                 user: {
                     _id: chatReceived.senderInfo._id,
@@ -107,12 +125,14 @@ export default function Conversations({ route, navigation }) {
                 // console.log("chat sau khi lay api vee bang conversation id ==============================")
                 const formattedMessages = chats.map(message => {
                     const { text, video, image, file } = message.content;
+                    const { type } = message;
                     return {
                         _id: message._id,
                         ...(text && { text }),
                         ...(image && { image }),
                         ...(video && { video }),
                         ...(file && { file }),
+                        ...(type && { type }),
                         createdAt: new Date(message.createdAt),
                         user: {
                             _id: message.senderInfo._id,
@@ -144,6 +164,8 @@ export default function Conversations({ route, navigation }) {
             setIsConfirmModalVisible(false);
             setIsConfirmModalImageVisible(false);
             setIsConfirmModalVideoVisible(false);
+
+            setMessages(messages.filter(message => message._id !== selectedMessage._id));
 
         } catch (error) {
             console.error('Lỗi khi xóa tin nhắn:', error);
@@ -409,11 +431,13 @@ export default function Conversations({ route, navigation }) {
 
     // Hàm render tin nhắn tùy chỉnh
     const renderCustomMessage = (props) => {
-        const { text, image, video, file } = props.currentMessage;
+        const { text, image, video, file, type } = props.currentMessage;
         const files = [
             'application/pdf',
             'application/msword',
         ];
+        // console.log("props of custom render mesage: ", props.currentMessage);
+        const isCurrentUser = props.currentMessage.user._id === currentUser.user.uid;
         const fileTypeDocument = mime.getType(file?.url);
 
 
@@ -422,7 +446,7 @@ export default function Conversations({ route, navigation }) {
         if (image || fileTypeDocument === 'image/jpeg' || fileTypeDocument === 'image/png') {
             return (
                 <TouchableOpacity
-                    style={{ width: 300, height: 300, marginLeft: '27%' }}
+                    style={{ width: 300, height: 300, marginLeft: isCurrentUser ? '30%' : '2%' }}
                     onLongPress={() => {
                         setSelectedMessage(props.currentMessage);
                         setModalImageVisible(true);
@@ -439,9 +463,56 @@ export default function Conversations({ route, navigation }) {
 
         // Kiểm tra nếu là tin nhắn video
         if (video || fileTypeDocument === 'video/mp4') {
+
             return (
-                <View style={{ width: 300, height: 300, overflow: 'hidden', flexDirection: 'row', marginLeft: '18%' }}>
-                    <TouchableOpacity
+                <View style={{ width: 400, height: 300, overflow: 'hidden', flexDirection: 'row' }}>
+
+                    {props.currentMessage.user._id == currentUser.user.uid ? (
+                        <View style={{ width: '96%', height: 300 }}>
+                            <View style={{ width: 300, height: 300, overflow: 'hidden', flexDirection: 'row', marginLeft: '23%' }}>
+                                <TouchableOpacity
+                                    style={{ width: 30, height: '100%', justifyContent: "center" }}
+                                    onPress={() => {
+                                        setSelectedMessage(props.currentMessage);
+                                        setModalVideoVisible(true);
+                                    }}
+                                >
+                                    <Entypo name="dots-three-horizontal" size={24} color="black" />
+                                </TouchableOpacity>
+                                <Video
+                                    ref={videoRef}
+                                    source={{ uri: video ? video : file?.url }}
+                                    style={{ width: 250, height: 280, backgroundColor: '#000', borderRadius: 20, paddingTop: 5, paddingBottom: 5 }}
+                                    resizeMode="cover"
+                                    useNativeControls
+                                    isLooping
+                                />
+                            </View>
+                        </View>
+
+                    ) : (
+                        <View style={{ width: 300, height: 300, overflow: 'hidden', flexDirection: 'row', marginLeft: '2%' }}>
+
+                            <Video
+                                ref={videoRef}
+                                source={{ uri: video ? video : file?.url }}
+                                style={{ width: 250, height: 280, backgroundColor: '#000', borderRadius: 20, paddingTop: 5, paddingBottom: 5 }}
+                                resizeMode="cover"
+                                useNativeControls
+                                isLooping
+                            />
+                            <TouchableOpacity
+                                style={{ width: 30, height: '100%', justifyContent: "center" }}
+                                onPress={() => {
+                                    setSelectedMessage(props.currentMessage);
+                                    setModalVideoVisible(true);
+                                }}
+                            >
+                                <Entypo name="dots-three-horizontal" size={24} color="black" />
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                    {/* <TouchableOpacity
                         style={{ width: 30, height: '100%', justifyContent: "center" }}
                         onPress={() => {
                             setSelectedMessage(props.currentMessage);
@@ -458,12 +529,12 @@ export default function Conversations({ route, navigation }) {
                         useNativeControls
                         // onPlaybackStatusUpdate={onPlaybackStatusUpdate}
                         isLooping
-                    />
+                    /> */}
                 </View>
             );
         }
 
-        
+
         // Kiểm tra nếu là tin nhắn document (PDF)
         if (file?.url) {
             // console.log("fileTypeDocument: ", fileTypeDocument);
@@ -484,7 +555,7 @@ export default function Conversations({ route, navigation }) {
                         setModalVisible(true);
                     }}
                     onPress={() => Linking.openURL(file.url)}
-                    style={{ width: '70%', height: 60, marginBottom: 5, marginLeft: '0%', marginLeft: '27%', backgroundColor: 'grey', borderRadius: 10, justifyContent: 'center' }}
+                    style={{ width: '70%', height: 60, marginBottom: 5, marginLeft: isCurrentUser ? '27%' : 0, backgroundColor: 'grey', borderRadius: 10, justifyContent: 'center' }}
                 >
                     <View
                         style={{ width: '100%', height: '100%', flexDirection: 'row' }}
@@ -511,6 +582,13 @@ export default function Conversations({ route, navigation }) {
         }
 
         // Nếu không phải loại tin nhắn tùy chỉnh, sử dụng Bubble mặc định
+        // console.log("type: ");
+        // console.log(type);
+
+        const bgrColor = {
+            deleted: "#B9BDC1",
+            notify: "#ff8fab",
+        }
         return (
             <Bubble
                 {...props}
@@ -518,17 +596,18 @@ export default function Conversations({ route, navigation }) {
                     right: {
                         // Thêm margin cho các text bên phải
                         marginBottom: 5,
-                        backgroundColor: '#0084FF',
+                        backgroundColor: ( bgrColor[type] ||  '#0084FF'),
+                        marginRight: 14
                     },
                     left: {
                         // Thêm margin cho các text bên trái
                         marginBottom: 5,
-                        backgroundColor: '#fff',
+                        backgroundColor: (bgrColor[type] || '#fff'),
                     },
                 }}
                 textStyle={{
                     right: {
-                        color: '#fff'
+                        color: type==='deleted' ? "#000" : '#fff'  
                     },
                     left: {
                         color: '#000'
@@ -749,7 +828,7 @@ export default function Conversations({ route, navigation }) {
                 {...props}
                 wrapperStyle={{
                     right: {
-                        backgroundColor: '#0084FF',
+                        backgroundColor: 'red',
                     },
                     left: {
                         backgroundColor: '#fff'
@@ -1081,12 +1160,12 @@ export default function Conversations({ route, navigation }) {
                 backdropTransitionOutTiming={600}
                 hideModalContentWhileAnimating={true}
             >
-                <View style={{ width: 250, height: 300, marginLeft: 70 }}>
+                <View style={{ width: 250, height: 300, marginLeft: 50 }}>
                     <Video
                         source={{
                             uri: selectedMessage.video
                         }}
-                        style={{ width: '100%', height: '100%', borderRadius: 20 }}
+                        style={{ width: '100%', height: 280, borderRadius: 20, backgroundColor: 'blue' }}
                     />
                 </View>
                 <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
