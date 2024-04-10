@@ -96,14 +96,14 @@ export default function Conversations({ route, navigation }) {
     useEffect(() => {
         if (chatReceived) {
             const { text, video, image, file } = chatReceived.content;
-            const {type} = chatReceived;
+            const { type } = chatReceived;
             const newMessage = {
                 _id: chatReceived?._id || chatReceived.createdAt,
                 ...(text && { text }),
                 ...(image && { image }),
                 ...(video && { video }),
                 ...(file && { file }),
-                ...(type && {type}),
+                ...(type && { type }),
                 createdAt: new Date(chatReceived.createdAt),
                 user: {
                     _id: chatReceived.senderInfo._id,
@@ -473,6 +473,7 @@ export default function Conversations({ route, navigation }) {
                                 <TouchableOpacity
                                     style={{ width: 30, height: '100%', justifyContent: "center" }}
                                     onPress={() => {
+                                        console.log("selectedMessage: ", props.currentMessage);
                                         setSelectedMessage(props.currentMessage);
                                         setModalVideoVisible(true);
                                     }}
@@ -555,7 +556,7 @@ export default function Conversations({ route, navigation }) {
                         setModalVisible(true);
                     }}
                     onPress={() => Linking.openURL(file.url)}
-                    style={{ width: '70%', height: 60, marginBottom: 5, marginLeft: isCurrentUser ? '27%' : 0, backgroundColor: 'grey', borderRadius: 10, justifyContent: 'center' }}
+                    style={{ width: '70%', height: 60, marginBottom: 5, marginLeft: isCurrentUser ? '27%' : '2%', backgroundColor: 'grey', borderRadius: 10, justifyContent: 'center' }}
                 >
                     <View
                         style={{ width: '100%', height: '100%', flexDirection: 'row' }}
@@ -596,18 +597,19 @@ export default function Conversations({ route, navigation }) {
                     right: {
                         // Thêm margin cho các text bên phải
                         marginBottom: 5,
-                        backgroundColor: ( bgrColor[type] ||  '#0084FF'),
+                        backgroundColor: (bgrColor[type] || '#0084FF'),
                         marginRight: 14
                     },
                     left: {
                         // Thêm margin cho các text bên trái
+                        marginLeft: 8,
                         marginBottom: 5,
                         backgroundColor: (bgrColor[type] || '#fff'),
                     },
                 }}
                 textStyle={{
                     right: {
-                        color: type==='deleted' ? "#000" : '#fff'  
+                        color: type === 'deleted' ? "#000" : '#fff'
                     },
                     left: {
                         color: '#000'
@@ -1163,9 +1165,10 @@ export default function Conversations({ route, navigation }) {
                 <View style={{ width: 250, height: 300, marginLeft: 50 }}>
                     <Video
                         source={{
-                            uri: selectedMessage.video
+                            uri: selectedMessage.file?.url ? selectedMessage.file?.url : selectedMessage.video
                         }}
-                        style={{ width: '100%', height: 280, borderRadius: 20, backgroundColor: 'blue' }}
+                        style={{ width: '100%', height: '100%', borderRadius: 20 }}
+                        resizeMode="cover"
                     />
                 </View>
                 <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
