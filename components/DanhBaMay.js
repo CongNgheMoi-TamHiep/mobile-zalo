@@ -17,6 +17,7 @@ import { useNavigation } from "@react-navigation/native";
 
 import * as Contacts from "expo-contacts";
 import { set } from "date-fns";
+import { useSocket } from "../context/SocketProvider.js";
 //hàm cắt tên quá dài
 function FormatTenQuaDai(text, maxLength) {
   return text.length > maxLength
@@ -36,30 +37,37 @@ function DanhBaMay() {
   //Lấy danh sách bạn bè
   const [users, setUsers] = useState([]);
   const [phonebook, setPhonebook] = useState([]);
+  const { socket } = useSocket();
   useEffect(() => {
-    (async () => {
-      fetchContacts();
-      const users = await axiosPrivate("/user");
-      // lấy friends của user hiện hành
-      const friends = await axiosPrivate(`/friends/${user.uid}`);
-      setPhonebook(friends.phoneBook);
-      setUsers(users);
-    })();
-  }, []);
-  // hàm trả về trạng thái kết bạn
-  async function isFriend(id) {
-    const stateFriend = await axiosPrivate("/friendRequest/state", {
-      params: { userId1: user.uid, userId2: id },
+    console.log("socket.id");
+    console.log(socket.id);
+    socket.on("receiveFriendRequest", (data) => {
+      getDataTong()
     });
-    console.log("object", stateFriend);
-    return stateFriend;
-  }
+    socket.on("cancelFriendRequest", (data) => {
+      getDataTong()
+    });
+    socket.on("acceptFriendRequest", (data) => {
+      getDataTong()
+    });
+  }, [socket.id]);
 
+  useEffect(() => { (async()=>{
+    await getDataTong();
+  })()}, []);
+  async function getDataTong() {
+   await fetchContacts();
+    const users = await axiosPrivate("/user");
+    // lấy friends của user hiện hành
+    const friends = await axiosPrivate(`/friends/phoneBook/${user.uid}`);
+    setPhonebook(friends);
+    setUsers(users); 
+  }
   //hàm kiểm tra xem sdt đó có đang dùng zalo không, có thì trả về user đó
   function isCoDungZL(sdt) {
     const userWithPhoneNumber = users.find((user) => {
       let number = "0" + user.number.slice(3);
-      return number === sdt;
+      return number === sdt.replace(/\s/g, "");
     });
     return userWithPhoneNumber;
   }
@@ -71,20 +79,22 @@ function DanhBaMay() {
       const { data } = await Contacts.getContactsAsync({
         fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
       });
-      setContacts(data);
+      
+      handleFormatContacts(data);
     }
   };
   // format danh bạ máy về dạng mảng object {nameDanhBa, number}
+  const [b, setB] = useState([]);
   const handleFormatContacts = (contacts) => {
     const a = contacts.filter((item) => {
-      return (
+      return ( 
         item.phoneNumbers &&
         item.phoneNumbers.length > 0 &&
         isCoDungZL(item.phoneNumbers[0].number)
       );
     });
 
-    return a.map((v) => {
+    const b = a.map((v) => {
       const user = isCoDungZL(v.phoneNumbers[0].number);
       return {
         userId: user._id,
@@ -92,35 +102,60 @@ function DanhBaMay() {
         number: v.phoneNumbers[0].number,
       };
     });
+    setB(b);
   };
 
   // kiểm tra trên database có phonebook không, nếu không có thì lấy danh bạ máy, nếu có thì lấy phonebook
-  const phonebook1 = phonebook ? phonebook : handleFormatContacts(contacts);
+  const phonebook1 = phonebook.length !== 0 ? phonebook : b;
   // cập nhật danh bạ máy lên api
   useEffect(() => {
-    if (phonebook) {
+    if (phonebook.length !== 0) {
       return;
     } else {
-      const formatContacts = handleFormatContacts(contacts);
-      uploadPhoneBook(formatContacts);
+      // const formatContacts = handleFormatContacts(contacts);
+      uploadPhoneBook(b);
       console.log("upload phonebook success");
     }
   }, [phonebook1]);
 
   // Sắp xếp danh sách conTacst theo tên (name)
-  const sortedData = phonebook1
-    .slice()
-    .sort((a, b) => a.nameDanhBa.localeCompare(b.nameDanhBa));
+  const [sortedData, setSortedData] = useState([]);
+  // hàm trả về trạng thái kết bạn
+  async function isFriend(id) {
+    const stateFriend = await axiosPrivate("/friendRequest/state", {
+      params: { userId1: user.uid, userId2: id },
+    });
+    return String(stateFriend);
+  }
+
+  useEffect(() => {
+    (async () => {
+      let sortedDataTemp = phonebook1.sort((a, b) =>
+        a.nameDanhBa.localeCompare(b.nameDanhBa)
+      );
+      sortedDataTemp = await Promise.all(
+        sortedDataTemp.map(async (item) => {
+          const state = await isFriend(item.userId);
+          return {
+            ...item, 
+            state,
+          };
+        })
+      );
+      setSortedData(sortedDataTemp);
+    })();
+  }, [phonebook1]);
 
   // Tạo một đối tượng để nhóm các tên theo chữ cái
   const groupedData = {};
-  sortedData.forEach((item) => {
+  sortedData?.forEach((item) => {
     const firstChar = item.nameDanhBa.charAt(0).toUpperCase();
     if (!groupedData[firstChar]) {
       groupedData[firstChar] = [];
     }
     groupedData[firstChar].push(item);
   });
+
   // hàm đưa contacts lên api vào phoenbook
   async function uploadPhoneBook(formatContacts) {
     try {
@@ -131,6 +166,59 @@ function DanhBaMay() {
       console.error("Error fetching user data: ", error);
     }
   }
+
+  //hàm đồng ý kết bạn
+  const DongY = async (id) => {
+    try {
+      await axiosPrivate.post("/friendRequest/accept", {
+        friendRequestId: id + "-" + user.uid,
+      });
+      const friends = await axiosPrivate(`/friends/phoneBook/${user.uid}`);
+      setPhonebook(friends);
+    } catch (err) {
+      console.log("Lỗi đồng ý kết bạn", err);
+    }
+  };
+  //hàm thu hồi lời mời kết bạn
+  async function ThuHoi(id) {
+    const idThu = user.uid + "-" + id;
+    try {
+      await axiosPrivate.post(`/friendRequest/cancel`, {
+        friendRequestId: idThu,
+      });
+      const friends = await axiosPrivate(`/friends/phoneBook/${user.uid}`);
+      setPhonebook(friends);
+    } catch (error) {
+      console.log(error);
+    }
+  }
+  // hàm từ chối lời mời kết bạn
+  // async function TuChoi(id) {
+  //   try {
+  //     const idTuChoi = id + "-" + user.uid;
+  //     await axiosPrivate.post(`/friendRequest/decline`, {
+  //       friendRequestId: idTuChoi,
+  //     });
+  //     const friends = await axiosPrivate(`/friends/phoneBook/${user.uid}`);
+  //     setPhonebook(friends);
+  //     getReceivedFriendRequests();
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // }
+  //Hàm kết bạn
+  const KetBan = async (id) => {
+    try {
+      await axiosPrivate.post("/friendRequest/send", {
+        senderUserId: user.uid,
+        receiverUserId: id,
+      });
+      const friends = await axiosPrivate(`/friends/phoneBook/${user.uid}`);
+      setPhonebook(friends);
+    } catch (err) {
+      console.log("Lỗi kết bạn", err);
+    }
+  };
   return (
     <View style={styles.container}>
       <View
@@ -142,18 +230,21 @@ function DanhBaMay() {
         }}
       >
         <Text style={{ fontSize: 16, fontWeight: "500", padding: 10 }}>
-          Lần cập nhật danh bạ gần nhất
+          Cập nhật lại danh bạ
         </Text>
         <TouchableOpacity
           onPress={() => {
-            uploadPhoneBook(handleFormatContacts(contacts));
+            uploadPhoneBook(b); 
+
+            getDataTong();
+
           }}
           style={{}}
         >
           <Text style={{ fontSize: 16, fontWeight: "500", color: "#00aaff" }}>
             Cập nhật
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> 
       </View>
       <ScrollView>
         <View style={{ width: "100%", height: 8, backgroundColor: "#ccc" }} />
@@ -184,7 +275,7 @@ function DanhBaMay() {
                     }}
                     source={{
                       uri: users.find(
-                        (user) => "0" + user.number.slice(3) === item.number
+                        (user) => "0" + user.number.slice(3) === item.number.replace(/\s/g, "")
                       )?.avatar,
                     }}
                   />
@@ -203,60 +294,102 @@ function DanhBaMay() {
                       Tên zola:{" "}
                       {
                         users.find(
-                          (user) => "0" + user.number.slice(3) === item.number
+                          (user) => "0" + user.number.slice(3) === item.number.replace(/\s/g, "")
                         )?.name
                       }
                     </Text>
-                   
                   </View>
                 </View>
 
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  {isCoDungZL(item.number) ? (
+                  {item.state === "accepted" ? (
+                    <TouchableOpacity
+                      style={{
+                        width: 40,
+                        height: 40,
+                        borderRadius: 50,
+                        backgroundColor: "#E0FFFF",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Feather name="phone" size={20} color="#006AF5" />
+                    </TouchableOpacity>
+                  ) : item.state === "nofriend" ||
+                    item.state === "declined2" ? (
                     <TouchableOpacity
                       onPress={() => {
-                        console.log("Kết bạn", item.userId);
+                        KetBan(item.userId);
                       }}
                       style={{
-                        width: 79,
-                        height: 30,
-                        justifyContent: "center",
-                        alignItems: "center",
+                        width: 85,
+                        height: 35,
                         borderRadius: 15,
-                        backgroundColor: "#CFFFFF",
+                        backgroundColor: "#E0FFFF",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
                       <Text
                         style={{
-                          fontSize: 18,
-                          fontWeight: "400",
+                          fontSize: 16,
+                          fontWeight: 500,
                           color: "#006AF5",
                         }}
                       >
                         Kết bạn
                       </Text>
                     </TouchableOpacity>
-                  ) : (
+                  ) : item.state === "pending2" ? (
                     <TouchableOpacity
+                      onPress={() => {
+                        DongY(item.userId);
+                      }}
                       style={{
-                        width: 75,
-                        height: 30,
-                        justifyContent: "center",
-                        alignItems: "center",
+                        width: 85,
+                        height: 35,
                         borderRadius: 15,
-                        backgroundColor: "#CFFFFF",
+                        backgroundColor: "#E0FFFF",
+                        alignItems: "center",
+                        justifyContent: "center",
                       }}
                     >
                       <Text
                         style={{
-                          fontSize: 18,
-                          fontWeight: "400",
+                          fontSize: 16,
+                          fontWeight: 500,
                           color: "#006AF5",
                         }}
                       >
-                        Mời
+                        Đồng ý
                       </Text>
                     </TouchableOpacity>
+                  ) : item.state === "pending1" ? (
+                    <TouchableOpacity
+                      onPress={() => {
+                        ThuHoi(item.userId);
+                      }}
+                      style={{
+                        width: 85,
+                        height: 35,
+                        borderRadius: 15,
+                        backgroundColor: "#E0E0E0",
+                        alignItems: "center",
+                        justifyContent: "center",
+                      }}
+                    >
+                      <Text
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 500,
+                          color: "black",
+                        }}
+                      >
+                        Thu hồi
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={{ width: 85 }}></View>
                   )}
                 </View>
               </TouchableOpacity>

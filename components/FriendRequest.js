@@ -45,6 +45,7 @@ function DaNhan({ navigation }) {
     console.log("socket.id");
     console.log(socket.id);
     socket.on("receiveFriendRequest", (data) => {
+      getReceivedFriendRequests();
       setReq(data);
     });
     socket.on("cancelFriendRequest", (data) => {
