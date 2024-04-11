@@ -65,8 +65,8 @@ export default function Conversations({ route, navigation }) {
     useEffect(() => {
         socket.on("getMessage", (chat) => {
             setChatReceived(chat);
-            console.log("chat sockett");
-            console.log(chat);
+            // console.log("chat sockett");
+            // console.log(chat);
         })
         socket.on("deleteMessage", (chatId) => {
             setDeletedChatId(chatId);
@@ -75,7 +75,7 @@ export default function Conversations({ route, navigation }) {
 
     useEffect(() => {
         if (deletedChatId) {
-            console.log("deleted chat id: ", deletedChatId);
+            // console.log("deleted chat id: ", deletedChatId);
             // edit content of deletedChatId to "The message has been recalled!"
             const newMessages = messages.map(message => {
                 if (message._id === deletedChatId) {
@@ -266,13 +266,13 @@ export default function Conversations({ route, navigation }) {
             allowsMultipleSelection: true
         });
 
-        // console.log("ImagePicker result:", result);
+        console.log("ImagePicker result:", result);
 
         if (result.cancelled) {
             return;
         }
 
-        if (Array.isArray(result.assets)) {
+        if (result.assets.length > 1) {
             const formData = new FormData();
             // send multiple images
             result.assets.forEach((item, index) => {
