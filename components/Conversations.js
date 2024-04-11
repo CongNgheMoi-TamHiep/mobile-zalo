@@ -23,6 +23,7 @@ export default function Conversations({ route, navigation }) {
     // dữ liệu giả
     const [messages, setMessages] = useState([]);
 
+    const [isModalErrorFileSizeVisible, setIsModalErrorFileSizeVisible] = useState(false);
     const [isModalVisible, setModalVisible] = useState(false);
     const [isModalImageVisible, setModalImageVisible] = useState(false);
     const [isModalVideoVisible, setModalVideoVisible] = useState(false);
@@ -95,8 +96,10 @@ export default function Conversations({ route, navigation }) {
 
     useEffect(() => {
         if (chatReceived) {
-            const { text, video, image, file } = chatReceived.content;
+            // console.log('chat received content:', chatReceived?.content?.images)
+            const { text, video, image, file, images } = chatReceived.content;
             const { type } = chatReceived;
+
             const newMessage = {
                 _id: chatReceived?._id || chatReceived.createdAt,
                 ...(text && { text }),
@@ -104,6 +107,7 @@ export default function Conversations({ route, navigation }) {
                 ...(video && { video }),
                 ...(file && { file }),
                 ...(type && { type }),
+                ...(images && images?.length > 0 && { images }),
                 createdAt: new Date(chatReceived.createdAt),
                 user: {
                     _id: chatReceived.senderInfo._id,
@@ -121,11 +125,14 @@ export default function Conversations({ route, navigation }) {
         const conversationId = conversationInfo?.conversationId;
         (async () => {
             if (conversationId) {
+
                 const chats = await axiosPrivate.get(`/chat/${conversationId}`);
                 // console.log("chat sau khi lay api vee bang conversation id ==============================")
                 const formattedMessages = chats.map(message => {
-                    const { text, video, image, file } = message.content;
+                    // console.log("chat received: ", message.content);
+                    const { text, video, image, file, images } = message.content;
                     const { type } = message;
+
                     return {
                         _id: message._id,
                         ...(text && { text }),
@@ -133,6 +140,7 @@ export default function Conversations({ route, navigation }) {
                         ...(video && { video }),
                         ...(file && { file }),
                         ...(type && { type }),
+                        ...(images && images?.length > 0 && { images }),
                         createdAt: new Date(message.createdAt),
                         user: {
                             _id: message.senderInfo._id,
@@ -141,12 +149,7 @@ export default function Conversations({ route, navigation }) {
                         }
                     }
                 });
-                // console.log("Format messageeeeeeeeeeeeeeeeeee:")
-                // console.log(chats)
                 setMessages(formattedMessages.reverse());
-                // console.log('MESSAGE ====================================================')
-                // console.log(messages)
-                // setConversation(conversation);
             }
         })();
     }, [])
@@ -219,6 +222,11 @@ export default function Conversations({ route, navigation }) {
         setIsFocused(false);
     };
 
+    // modal error when file size too large
+    const toggleErrorFileSize = () => {
+        setIsModalErrorFileSizeVisible(!isModalErrorFileSizeVisible);
+    }
+
     // modal unsend message
     const toggleUnsendMessage = () => {
         setModalVisible(!isModalVisible);
@@ -264,49 +272,84 @@ export default function Conversations({ route, navigation }) {
             return;
         }
 
-        // Xử lí upload media lên AWS
-        let localUri = result.uri;
-        let filename = localUri.split("/").pop();
-        let match = /\.(\w+)$/.exec(filename);
+        if (Array.isArray(result.assets)) {
+            const formData = new FormData();
+            // send multiple images
+            result.assets.forEach((item, index) => {
+                formData.append("files", {
+                    uri: item.uri,
+                    name: item.uri.split("/").pop(),
+                    type: mime.getType(item.uri)
+                });
+            });
+            if (formData) {
+                axiosPrivate.post('/chat/Multifiles', formData, {
+                    params: {
+                        type: "images",
+                        senderId: currentUser.user.uid,
+                        conversationId: conversationInfo?.conversationId
+                    },
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Accept: "application/json",
+                    }
+                }).then(res => {
 
-        const formData = new FormData();
-        formData.append("file", {
-            uri: localUri,
-            name: filename,
-            type: mime.getType(localUri)
-        });
+                }).catch(err => {
+                    setIsModalErrorFileSizeVisible(true);
+                })
+            }
+        } else {
+            // Xử lí upload media lên AWS
+            let localUri = result.uri;
+            let filename = localUri.split("/").pop();
+            let match = /\.(\w+)$/.exec(filename);
 
-        console.log('formData:');
-        console.log(formData._parts[0][1]);
+            const formData = new FormData();
 
-        if (formData) {
-            await axiosPrivate.post('/chat/files', formData, {
-                params: {
-                    type: result.type,
-                    senderId: currentUser.user.uid,
-                    conversationId: conversationInfo?.conversationId
-                },
-                headers: {
-                    "Content-Type": "multipart/form-data",
-                    Accept: "application/json",
-                }
-            })
+            formData.append("file", {
+                uri: localUri,
+                name: filename,
+                type: mime.getType(localUri)
+            });
+
+            console.log('formData:');
+            console.log(formData._parts[0][1]);
+
+            if (formData) {
+                axiosPrivate.post('/chat/files', formData, {
+                    params: {
+                        type: result.type,
+                        senderId: currentUser.user.uid,
+                        conversationId: conversationInfo?.conversationId
+                    },
+                    headers: {
+                        "Content-Type": "multipart/form-data",
+                        Accept: "application/json",
+                    }
+                }).then(res => {
+
+                }).catch(err => {
+                    setIsModalErrorFileSizeVisible(true);
+                })
+            }
         }
 
-        // Xử lí chọn media và gửi ở gifted chat
-        const selectedMedia = result.assets.map((item, index) => {
-            const mediaType = item.type ? item.type.toLowerCase() : '';
 
-            return {
-                _id: messages.length + index + 1,
-                type: mediaType, // Đảm bảo type là "video" khi gửi video
-                [mediaType]: item.uri,
-                createdAt: new Date(),
-                user: {
-                    _id: currentUser.user.uid,
-                },
-            };
-        });
+        // Xử lí chọn media và gửi ở gifted chat
+        // const selectedMedia = result.assets.map((item, index) => {
+        //     const mediaType = item.type ? item.type.toLowerCase() : '';
+
+        //     return {
+        //         _id: messages.length + index + 1,
+        //         type: mediaType, // Đảm bảo type là "video" khi gửi video
+        //         [mediaType]: item.uri,
+        //         createdAt: new Date(),
+        //         user: {
+        //             _id: currentUser.user.uid,
+        //         },
+        //     };
+        // });
 
         // console.log("Selected media:", selectedMedia);
         // onSend(selectedMedia);
@@ -395,7 +438,7 @@ export default function Conversations({ route, navigation }) {
             console.log(formData._parts[0][1]);
 
             if (formData) {
-                await axiosPrivate.post('/chat/files', formData, {
+                axiosPrivate.post('/chat/files', formData, {
                     params: {
                         type: 'file',
                         senderId: currentUser.user.uid,
@@ -405,6 +448,11 @@ export default function Conversations({ route, navigation }) {
                         "Content-Type": "multipart/form-data",
                         Accept: "application/json",
                     }
+                }).then(res => {
+
+                }).catch(err => {
+                    setIsModalErrorFileSizeVisible(true);
+
                 })
                 console.log("up file thanh cong!");
             }
@@ -431,7 +479,8 @@ export default function Conversations({ route, navigation }) {
 
     // Hàm render tin nhắn tùy chỉnh
     const renderCustomMessage = (props) => {
-        const { text, image, video, file, type } = props.currentMessage;
+        const { text, image, video, file, type, images } = props.currentMessage;
+        // console.log("images: ", images);
         const files = [
             'application/pdf',
             'application/msword',
@@ -454,10 +503,36 @@ export default function Conversations({ route, navigation }) {
                 >
                     <Image
                         source={{ uri: image }}
-                        style={{ width: 250, height: 280, borderRadius: 20, paddingTop: 5, paddingBottom: 5 }}
+                        style={{ width: '83%', height: '93%', borderRadius: 20, paddingTop: 5, paddingBottom: 5 }}
                         resizeMode="cover"
                     />
                 </TouchableOpacity>
+            );
+        }
+        // Kiểm tra tin nhắn là mảng hình ảnh
+        if ((images && Array.isArray(images) && images.length > 0) || (fileTypeDocument === 'image/jpeg' || fileTypeDocument === 'image/png')) {
+            let images1 = images;
+            return (
+                <View style={{ width: 250, height: 280, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', borderWidth: 1, marginBottom: 5, borderRadius: 10, marginLeft: isCurrentUser ? '30%' : '2%' }}>
+
+                    {images1.map((img, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={{ width: 100, height: 100, margin: 5, justifyContent: 'center', alignItems: 'center' }}
+                        // onLongPress={() => {
+                        //     console.log('message: ', img);
+                        //     setSelectedMessage(img);
+                        //     setModalImageVisible(true);
+                        // }}
+                        >
+                            <Image
+                                source={{ uri: img.url }}
+                                style={{ width: '95%', height: '95%', borderRadius: 10 }}
+                                resizeMode="cover"
+                            />
+                        </TouchableOpacity>
+                    ))}
+                </View>
             );
         }
 
@@ -925,62 +1000,110 @@ export default function Conversations({ route, navigation }) {
                         {selectedMessage.text}
                     </Text>
                 </View>
-                <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 20, marginTop: 10, marginBottom: 30 }}>
-                    <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
-                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
-                            <Image
-                                source={require('../assets/reply.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Reply
-                            </Text>
-                        </View>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={() => {
-                                navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
-                                setModalVisible(false);
-                            }}
-                        >
-                            <Image
-                                source={require('../assets/arrow.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Forward
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={unsendMessage}
-                        >
-                            <Image
-                                source={require('../assets/message.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Recall
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={() => {
-                                setModalVisible(false);
-                                setIsConfirmModalVisible(true);
-                            }}
-                        >
-                            <Image
-                                source={require('../assets/delete.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Delete
-                            </Text>
-                        </TouchableOpacity>
+                {currentUser.user.uid === selectedMessage.user?._id ? (
+                    <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 20, marginTop: 10, marginBottom: 30 }}>
+                        <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                            <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                                <Image
+                                    source={require('../assets/reply.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Reply
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                    setModalVisible(false);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/arrow.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Forward
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={unsendMessage}
+                            >
+                                <Image
+                                    source={require('../assets/message.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Recall
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    setModalVisible(false);
+                                    setIsConfirmModalVisible(true);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/delete.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Delete
+                                </Text>
+                            </TouchableOpacity>
 
+                        </View>
                     </View>
-                </View>
+                ) : (
+                    <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 20, marginTop: 10, marginBottom: 30 }}>
+                        <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                            <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                                <Image
+                                    source={require('../assets/reply.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Reply
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                    setModalVisible(false);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/arrow.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Forward
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    setModalVisible(false);
+                                    setIsConfirmModalVisible(true);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/delete.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Delete
+                                </Text>
+                            </TouchableOpacity>
+
+                        </View>
+                    </View>
+                )}
+
             </Modal>
             {/* ================================================================= Modal xác nhận khi xóa tin nhắn text */}
             <Modal
@@ -1041,67 +1164,115 @@ export default function Conversations({ route, navigation }) {
                 backdropTransitionOutTiming={600}
                 hideModalContentWhileAnimating={true}
             >
+
                 <View style={{ width: 250, height: 300, marginLeft: 70 }}>
                     <Image
-                        source={{ uri: selectedMessage.image }}
+                        source={{ uri: selectedMessage.image ? selectedMessage.image : selectedMessage.url }}
                         style={{ width: '100%', height: '100%', borderRadius: 20 }}
                     />
                 </View>
-                <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
-                    <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
-                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
-                            <Image
-                                source={require('../assets/reply.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Reply
-                            </Text>
+                {currentUser.user.uid === selectedMessage.user?._id ? (
+                    <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
+                        <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                            <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                                <Image
+                                    source={require('../assets/reply.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Reply
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                    setModalImageVisible(false);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/arrow.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Forward
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={unsendMessage}
+                            >
+                                <Image
+                                    source={require('../assets/message.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Recall
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    setModalVideoVisible(false);
+                                    setIsConfirmModalVideoVisible(true);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/delete.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Delete
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={() => {
-                                navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
-                                setModalImageVisible(false);
-                            }}
-                        >
-                            <Image
-                                source={require('../assets/arrow.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Forward
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={unsendMessage}
-                        >
-                            <Image
-                                source={require('../assets/message.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Recall
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={() => {
-                                setModalVideoVisible(false);
-                                setIsConfirmModalVideoVisible(true);
-                            }}
-                        >
-                            <Image
-                                source={require('../assets/delete.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Delete
-                            </Text>
-                        </TouchableOpacity>
                     </View>
-                </View>
+                ) : (
+                    <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
+                        <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                            <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                                <Image
+                                    source={require('../assets/reply.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Reply
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                    setModalImageVisible(false);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/arrow.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Forward
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    setModalVideoVisible(false);
+                                    setIsConfirmModalVideoVisible(true);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/delete.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Delete
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                )}
+
             </Modal>
             {/* ================================================================= Modal xác nhận khi xóa tin nhắn hình ảnh */}
             <Modal
@@ -1171,61 +1342,109 @@ export default function Conversations({ route, navigation }) {
                         resizeMode="cover"
                     />
                 </View>
-                <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
-                    <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
-                        <View style={{ width: 55, height: 60, alignItems: 'center' }}>
-                            <Image
-                                source={require('../assets/reply.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Reply
-                            </Text>
+                {currentUser.user.uid === selectedMessage.user?._id ? (
+                    <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
+                        <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                            <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                                <Image
+                                    source={require('../assets/reply.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Reply
+                                </Text>
+                            </View>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                    setModalVideoVisible(false);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/arrow.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Forward
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={unsendMessage}
+                            >
+                                <Image
+                                    source={require('../assets/message.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Recall
+                                </Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={{ width: 55, height: 60, alignItems: 'center' }}
+                                onPress={() => {
+                                    setModalVideoVisible(false);
+                                    setIsConfirmModalVideoVisible(true);
+                                }}
+                            >
+                                <Image
+                                    source={require('../assets/delete.png')}
+                                    style={{ width: 32, height: 32 }}
+                                />
+                                <Text>
+                                    Delete
+                                </Text>
+                            </TouchableOpacity>
                         </View>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={() => {
-                                navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
-                                setModalVideoVisible(false);
-                            }}
-                        >
-                            <Image
-                                source={require('../assets/arrow.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Forward
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={unsendMessage}
-                        >
-                            <Image
-                                source={require('../assets/message.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Recall
-                            </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                            style={{ width: 55, height: 60, alignItems: 'center' }}
-                            onPress={() => {
-                                setModalVideoVisible(false);
-                                setIsConfirmModalVideoVisible(true);
-                            }}
-                        >
-                            <Image
-                                source={require('../assets/delete.png')}
-                                style={{ width: 32, height: 32 }}
-                            />
-                            <Text>
-                                Delete
-                            </Text>
-                        </TouchableOpacity>
                     </View>
-                </View>
+                ) :
+                    (
+                        <View style={{ width: 325, height: 70, borderRadius: 10, backgroundColor: '#FFF', marginLeft: 0, marginTop: 10, marginBottom: 30 }}>
+                            <View style={{ width: '90%', height: '90%', marginLeft: '5%', marginTop: '2%', flexDirection: 'row', justifyContent: 'space-evenly' }}>
+                                <View style={{ width: 55, height: 60, alignItems: 'center' }}>
+                                    <Image
+                                        source={require('../assets/reply.png')}
+                                        style={{ width: 32, height: 32 }}
+                                    />
+                                    <Text>
+                                        Reply
+                                    </Text>
+                                </View>
+                                <TouchableOpacity
+                                    style={{ width: 55, height: 60, alignItems: 'center' }}
+                                    onPress={() => {
+                                        navigation.navigate('ForwardMessage', { message: selectedMessage, conversationId: conversationInfo?.conversationId });
+                                        setModalVideoVisible(false);
+                                    }}
+                                >
+                                    <Image
+                                        source={require('../assets/arrow.png')}
+                                        style={{ width: 32, height: 32 }}
+                                    />
+                                    <Text>
+                                        Forward
+                                    </Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={{ width: 55, height: 60, alignItems: 'center' }}
+                                    onPress={() => {
+                                        setModalVideoVisible(false);
+                                        setIsConfirmModalVideoVisible(true);
+                                    }}
+                                >
+                                    <Image
+                                        source={require('../assets/delete.png')}
+                                        style={{ width: 32, height: 32 }}
+                                    />
+                                    <Text>
+                                        Delete
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    )}
+
             </Modal>
             {/* ================================================================= Modal xác nhận khi xóa tin nhắn video */}
             <Modal
@@ -1268,6 +1487,30 @@ export default function Conversations({ route, navigation }) {
                         </TouchableOpacity>
                     </View>
 
+                </View>
+            </Modal>
+            {/* ================================================================= Modal khi gửi file quá lớn */}
+            <Modal
+                isVisible={isModalErrorFileSizeVisible}
+                onBackdropPress={toggleErrorFileSize}
+                style={{
+                    // position:'absolute',
+                    top: 180,
+                    left: 20
+                }}
+                backdropOpacity={0.65}
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+                backdropTransitionInTiming={600}
+                backdropTransitionOutTiming={600}
+                hideModalContentWhileAnimating={true}
+            >
+                <View style={{ width: 300, height: 100, backgroundColor: 'white', justifyContent: 'center' }}>
+                    <Text
+                        style={{ fontSize: 20, fontWeight: '600', marginLeft: 10, color: 'red' }}
+                    >
+                        File lớn hơn 20MB, vui lòng chọn file khác!
+                    </Text>
                 </View>
             </Modal>
         </View>
