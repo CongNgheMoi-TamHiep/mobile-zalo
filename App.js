@@ -31,6 +31,7 @@ import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js"
 import ForwardMessage from "./components/ForwardMessage.js";
 import DanhBaMay from "./components/DanhBaMay.js";
 import CreateGroup from "./components/CreateGroup.js";
+import OptionChat from "./components/OptionChat.js";
 // ...
 
 const auth = getAuth();
@@ -90,48 +91,60 @@ function ChatStack() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-          name="ChangePassword"
-          component={ChangePassword}
-          options={{
-            headerShown: true,
-            title: "Cập nhật mật khẩu",
-            headerStyle: {
-              backgroundColor: "#00aaff",
-            },
-            headerTintColor: "white",
-          }}
-        />
-        <Stack.Screen
-          name="FriendRequest"
-          component={FriendRequest}
-          options={{
-            headerShown: true,
-            title: "Lời mời kết bạn",
-            headerStyle: {
-              backgroundColor: "#00aaff",
-            },
-            headerTintColor: "white",
-          }}
-        />
-        <Stack.Screen
-          name="DanhBaMay"
-          component={DanhBaMay}
-          options={{
-            headerShown: true,
-            title: "Danh bạ máy",
-            headerStyle: {
-              backgroundColor: "#00aaff",
-            },
-            headerTintColor: "white",
-          }}
-        />
-        <Stack.Screen
-          name="QRCode"
-          component={QRCode}
-          options={{
-            headerShown: false,
-          }}
-        />
+        name="ChangePassword"
+        component={ChangePassword}
+        options={{
+          headerShown: true,
+          title: "Cập nhật mật khẩu",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
+       <Stack.Screen
+        name="FriendRequest"
+        component={FriendRequest}
+        options={{
+          headerShown: true,
+          title: "Lời mời kết bạn",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
+      <Stack.Screen
+        name="DanhBaMay"
+        component={DanhBaMay}
+        options={{
+          headerShown: true,
+          title: "Danh bạ máy",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
+       <Stack.Screen
+        name="OptionChat"
+        component={OptionChat}
+        options={{
+          headerShown: true,
+          title: "Tùy chọn",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
+       <Stack.Screen
+        name="QRCode"
+        component={QRCode}
+        options={{
+          headerShown: false,
+        }}
+      />
       </Stack.Navigator>
     </SafeAreaView>
   );

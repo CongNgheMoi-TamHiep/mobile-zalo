@@ -43,6 +43,7 @@ export default function Conversations({ route, navigation }) {
     // thong tin user tim kiem
     const searchUser = route.params?.searchUser;
     const conversationInfo = route.params?.conversationInfo;
+    console.log("object conversationInfo: ", conversationInfo);
     // kiểm tra xem người  dùng có nhập chữ hay không
     const [isTyping, setIsTyping] = useState(false);
     // hiệu ứng dấu nháy trong phần tin nhắn
@@ -415,7 +416,12 @@ export default function Conversations({ route, navigation }) {
                 <View style={{ width: 120, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <SimpleLineIcons name="phone" size={24} color="white" />
                     <Ionicons name="videocam-outline" size={28} color="white" />
+                    <TouchableOpacity
+                    onPress={() => navigation.navigate('OptionChat', { conversationInfo: conversationInfo })}
+                    >
                     <AntDesign name="bars" size={28} color="white" />
+
+                    </TouchableOpacity>
                 </View>
             )
 
