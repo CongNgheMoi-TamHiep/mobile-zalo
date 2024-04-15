@@ -43,7 +43,6 @@ export default function Conversations({ route, navigation }) {
     // thong tin user tim kiem
     const searchUser = route.params?.searchUser;
     const conversationInfo = route.params?.conversationInfo;
-    console.log("object conversationInfo: ", conversationInfo);
     // kiểm tra xem người  dùng có nhập chữ hay không
     const [isTyping, setIsTyping] = useState(false);
     // hiệu ứng dấu nháy trong phần tin nhắn
@@ -393,7 +392,7 @@ export default function Conversations({ route, navigation }) {
             },
             headerLeft: () => (
                 <View style={{ width: 250, flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
-                    <AntDesign name="left" size={24} color="white" onPress={() => navigation.goBack()} />
+                    <AntDesign name="left" size={24} color="white" onPress={() => navigation.navigate("Messages")} />
                     <Text
                         style={{
                             marginLeft: 10,
