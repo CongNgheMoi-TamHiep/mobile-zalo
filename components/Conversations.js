@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect, useRef, useEffect, useContext } from "react";
-import { View, Text, StyleSheet, TouchableOpacity, Image, Linking } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image, Linking, Dimensions } from "react-native";
 import { GiftedChat, Send, Bubble } from "react-native-gifted-chat";
 import { InputToolbar } from "react-native-gifted-chat";
 import * as ImagePicker from 'expo-image-picker';
@@ -19,6 +19,9 @@ import * as DocumentPicker from 'expo-document-picker';
 
 
 export default function Conversations({ route, navigation }) {
+
+    // width và height của thiết bị
+    const { widthOfDevice, heightOfDevice } = Dimensions.get('window');
 
     // dữ liệu giả
     const [messages, setMessages] = useState([]);

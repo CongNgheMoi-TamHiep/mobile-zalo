@@ -30,6 +30,7 @@ import FriendRequest from "./components/FriendRequest.js";
 import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js";
 import ForwardMessage from "./components/ForwardMessage.js";
 import DanhBaMay from "./components/DanhBaMay.js";
+import CreateGroup from "./components/CreateGroup.js";
 import OptionChat from "./components/OptionChat.js";
 // ...
 
@@ -56,6 +57,11 @@ function ChatStack() {
         <Stack.Screen
           name="MyTabs"
           component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CreateGroup"
+          component={CreateGroup}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -201,7 +207,7 @@ function AuthStack() {
             },
           }}
         />
-         <Stack.Screen
+        <Stack.Screen
           name="ForgetPasswordOTP"
           component={ForgetPasswordOTP}
           options={{
@@ -212,7 +218,7 @@ function AuthStack() {
             },
           }}
         />
-       
+
         <Stack.Screen
           name="SignupSDT"
           component={SignupSDT}
@@ -262,7 +268,7 @@ function RootNavigator() {
       </View>
     );
   }
-  
+
   return (
     <NavigationContainer>
       {user ? <ChatStack /> : <AuthStack />}
