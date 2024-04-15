@@ -24,106 +24,36 @@ import {
   FontAwesome5,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import { useCurrentUser } from "../App";
+import axiosPrivate from "../api/axiosPrivate";
 const OptionChat = ({ navigation, route }) => {
   const [showModal, setShowModal] = useState(false);
   const [isGroup, setIsGroup] = useState(false);
-  const [dataMember, setDataMember] = useState([]);
   const [dataConversation, setDataConversation] = useState({});
+  const [isLeader, setIsLeader] = useState(false);
+  const currentUser = useCurrentUser();
   useEffect(() => {
     setDataConversation(route.params.conversationInfo);
     if (route.params.conversationInfo.type === "group") {
       setIsGroup(true);
+      if (route.params.conversationInfo.adminId == currentUser.user.uid) {
+        setIsLeader(true);
+      }
     } else {
       setIsGroup(false);
     }
   }, []);
-  //   useEffect(() => {
-  //     if (route.params.nameGroup) {
-  //       getImageFileLinkGroup();
-  //       getMember();
-  //       setIsGroup(true);
-  //     } else {
-  //       getImageFileLink();
-  //       setIsGroup(false);
-  //     }
-  //     const socket = new SockJS('https://deploybackend-production.up.railway.app/ws');
-  //     stompClient.current = Stomp.over(socket);
-  //     stompClient.current.connect({}, onConnected, onError);
-  //   }, []);
-
-  //   const onConnected = () => {
-  //     stompClient.current.subscribe('/user/' + id + '/outGroup', (payload)=>{
-  //       navigation.navigate("ListChat")
-  //     })
-  //     // stompClient.current.subscribe('/user/' + id + '/singleChat', onReceiveFromSocket)
-  //   }
-
-  //   const addMember = (data) => {
-  //     stompClient.current.send('/app/addMemberIntoGroup', {}, JSON.stringify(data));
-  //   }
-
-  //   const onError = (error) => {
-  //     console.log('Could not connect to WebSocket server. Please refresh and try again!');
-  //   }
-
-  //   // get danh sách 4 ảnh file đầu tiên của group chat
-  //   const [firtFourImageGroup, setFirtFourImageGroup] = useState([]);
-  //   async function getImageFileLinkGroup() {
-  //     try {
-  //       const res = await axios.get(
-  //         `https://deploybackend-production.up.railway.app/messages/getMessageAndMemberByIdSenderAndIdGroup?idSender=${account.id}&idGroup=${route.params.id}`
-  //       );
-  //       if (res.data) {
-  //         const sort = res.data.sort(
-  //           (a, b) => new Date(a.senderDate) - new Date(b.senderDate)
-  //         );
-  //         const image = sort.filter((item) => {
-  //           return (
-  //             item.messageType === "PNG" ||
-  //             item.messageType === "JPEG" ||
-  //             item.messageType === "JPG" ||
-  //             item.messageType === "VIDEO"
-  //           );
-  //         });
-  //         setFirtFourImageGroup(image.slice(0, 4));
-  //       }
-  //     } catch (error) {
-  //       console.log("get image file link group error", error);
-  //     }
-  //   }
-
-  //   const outGroup = (data) => {
-  //     stompClient.current.send('/app/outGroup', {}, JSON.stringify(data));
-  //   }
-
-  //   // biến lưu trữ danh sách tin nhắn dạng file image sort theo thời gian gửi
-
-  //   const [firtFourImage, setFirtFourImage] = useState([]);
-  //   async function getImageFileLink() {
-  //     try {
-  //       const res = await axios.get(
-  //         `https://deploybackend-production.up.railway.app/users/getMessageByIdSenderAndIsReceiver?idSender=${account.id}&idReceiver=${route.params.id}`
-  //       );
-
-  //       if (res.data) {
-  //         const sort = res.data.sort(
-  //           (a, b) => new Date(a.senderDate) - new Date(b.senderDate)
-  //         );
-  //         const image = sort.filter((item) => {
-  //           return (
-  //             item.messageType === "PNG" ||
-  //             item.messageType === "JPEG" ||
-  //             item.messageType === "JPG" ||
-  //             item.messageType === "VIDEO"
-  //           );
-  //         });
-  //         setFirtFourImage(image.slice(0, 4));
-  //         // setImageSortByTime(sort);
-  //       }
-  //     } catch (error) {
-  //       console.log("get image file link error", error);
-  //     }
-  //   }
+  async function GiaiTanNhom(){
+    try {
+        const response = await axiosPrivate.delete(
+          `/group/dissolution/${dataConversation._id}`
+        );
+       
+      
+      } catch (error) {
+        console.error("Giải tán nhóm false:", error);
+      }
+  }
   return (
     <View style={styles.container}>
       <ScrollView style={{ width: "100%", height: "100%" }}>
@@ -399,7 +329,14 @@ const OptionChat = ({ navigation, route }) => {
               marginVertical: 1,
             }}
           >
-            <TouchableOpacity style={styles.item}>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("CreateGroup", {
+                  id: dataConversation?.user?._id,
+                });
+              }}
+              style={styles.item}
+            >
               <View style={styles.contentButton}>
                 <AntDesign name="addusergroup" size={22} color="#767A7F" />
                 <Text style={styles.text}>
@@ -668,7 +605,7 @@ const OptionChat = ({ navigation, route }) => {
                 <MaterialCommunityIcons
                   name="delete-outline"
                   size={22}
-                  color="black"
+                  color="red"
                 />
                 <Text style={styles.text}>Xóa lịch sử trò chuyện </Text>
               </View>
@@ -687,13 +624,35 @@ const OptionChat = ({ navigation, route }) => {
                 <MaterialCommunityIcons
                   name="delete-outline"
                   size={22}
-                  color="#DC1F18"
+                  color="red"
                 />
                 <Text style={styles.text}>Xóa lịch sử trò chuyện </Text>
               </View>
             </TouchableOpacity>
           </View>
         )}
+        {isLeader ? (
+          <View
+            style={{
+              backgroundColor: "white",
+              width: "100%",
+              marginVertical: 2,
+            }}
+          >
+            <TouchableOpacity
+            onPress={GiaiTanNhom}
+            style={styles.item}>
+              <View style={styles.contentButton}>
+                <MaterialCommunityIcons
+                  name="delete-outline"
+                  size={22}
+                  color="red"
+                />
+                <Text style={styles.text}>Giải tán nhóm </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </ScrollView>
     </View>
   );
