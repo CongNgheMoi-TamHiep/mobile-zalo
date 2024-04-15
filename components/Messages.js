@@ -31,11 +31,35 @@ export default function Chat({ navigation }) {
     const [loading, setLoading] = useState(true);
     const { socket } = useSocket();
     const [chatReceived, setChatReceived] = useState(null);
+    const [newConversation, setNewConversation] = useState(null);
     useEffect(() => {
         socket.on("getMessage", (chat) => {
             setChatReceived(chat);
         })
+        socket.on("newConversation", (conversation) => {
+            setNewConversation(conversation);
+        })
     }, []);
+
+    useEffect(() => {
+        if (newConversation) {
+            console.log("newConversation:");
+            console.log(newConversation);
+            setData((prevData) => {
+                const newData = [...prevData];
+                const index = newData.findIndex(
+                    (conversation) => conversation.conversationId === newConversation.conversationId
+                );
+                if (index !== -1) {
+                    newData[index] = newConversation;
+                } else {
+                    newData.unshift(newConversation);
+                }
+                return newData;
+            });
+        }
+    }, [newConversation]);
+
     useEffect(() => {
         (async () => {
             try {
@@ -259,6 +283,7 @@ const styles = StyleSheet.create({
     },
     viewOfFlatlist: {
         width: "100%",
+        backgroundColor: "#000",
         height: 60,
         flexDirection: "row",
         marginTop: 8,

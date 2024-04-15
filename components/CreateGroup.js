@@ -136,9 +136,14 @@ export default function CreateGroup({ navigation, route }) {
           name: groupName,
           members:array
       });
+      console.log("response: ");
       console.log(response);
       navigation.navigate("Conversations", {
-        conversationInfo: response});
+        conversationInfo: {
+          ...response, 
+          conversationId: response._id,
+        }
+      });
   }
   return (
     <View style={styles.container}>
