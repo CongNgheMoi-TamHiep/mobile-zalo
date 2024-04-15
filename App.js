@@ -30,6 +30,7 @@ import FriendRequest from "./components/FriendRequest.js";
 import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js";
 import ForwardMessage from "./components/ForwardMessage.js";
 import DanhBaMay from "./components/DanhBaMay.js";
+import OptionChat from "./components/OptionChat.js";
 // ...
 
 const auth = getAuth();
@@ -113,6 +114,18 @@ function ChatStack() {
         options={{
           headerShown: true,
           title: "Danh bạ máy",
+          headerStyle: {
+            backgroundColor: "#00aaff",
+          },
+          headerTintColor: "white",
+        }}
+      />
+       <Stack.Screen
+        name="OptionChat"
+        component={OptionChat}
+        options={{
+          headerShown: true,
+          title: "Tùy chọn",
           headerStyle: {
             backgroundColor: "#00aaff",
           },
