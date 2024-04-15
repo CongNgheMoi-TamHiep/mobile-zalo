@@ -30,6 +30,7 @@ import FriendRequest from "./components/FriendRequest.js";
 import ShowModelProvider, { useShowModel } from "./context/ShowModelProvider.js";
 import ForwardMessage from "./components/ForwardMessage.js";
 import DanhBaMay from "./components/DanhBaMay.js";
+import CreateGroup from "./components/CreateGroup.js";
 // ...
 
 const auth = getAuth();
@@ -55,6 +56,11 @@ function ChatStack() {
         <Stack.Screen
           name="MyTabs"
           component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="CreateGroup"
+          component={CreateGroup}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -84,48 +90,48 @@ function ChatStack() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-        name="ChangePassword"
-        component={ChangePassword}
-        options={{
-          headerShown: true,
-          title: "Cập nhật mật khẩu",
-          headerStyle: {
-            backgroundColor: "#00aaff",
-          },
-          headerTintColor: "white",
-        }}
-      />
-       <Stack.Screen
-        name="FriendRequest"
-        component={FriendRequest}
-        options={{
-          headerShown: true,
-          title: "Lời mời kết bạn",
-          headerStyle: {
-            backgroundColor: "#00aaff",
-          },
-          headerTintColor: "white",
-        }}
-      />
-      <Stack.Screen
-        name="DanhBaMay"
-        component={DanhBaMay}
-        options={{
-          headerShown: true,
-          title: "Danh bạ máy",
-          headerStyle: {
-            backgroundColor: "#00aaff",
-          },
-          headerTintColor: "white",
-        }}
-      />
-       <Stack.Screen
-        name="QRCode"
-        component={QRCode}
-        options={{
-          headerShown: false,
-        }}
-      />
+          name="ChangePassword"
+          component={ChangePassword}
+          options={{
+            headerShown: true,
+            title: "Cập nhật mật khẩu",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
+          }}
+        />
+        <Stack.Screen
+          name="FriendRequest"
+          component={FriendRequest}
+          options={{
+            headerShown: true,
+            title: "Lời mời kết bạn",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
+          }}
+        />
+        <Stack.Screen
+          name="DanhBaMay"
+          component={DanhBaMay}
+          options={{
+            headerShown: true,
+            title: "Danh bạ máy",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
+          }}
+        />
+        <Stack.Screen
+          name="QRCode"
+          component={QRCode}
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack.Navigator>
     </SafeAreaView>
   );
@@ -188,7 +194,7 @@ function AuthStack() {
             },
           }}
         />
-         <Stack.Screen
+        <Stack.Screen
           name="ForgetPasswordOTP"
           component={ForgetPasswordOTP}
           options={{
@@ -199,7 +205,7 @@ function AuthStack() {
             },
           }}
         />
-       
+
         <Stack.Screen
           name="SignupSDT"
           component={SignupSDT}
@@ -249,7 +255,7 @@ function RootNavigator() {
       </View>
     );
   }
-  
+
   return (
     <NavigationContainer>
       {user ? <ChatStack /> : <AuthStack />}

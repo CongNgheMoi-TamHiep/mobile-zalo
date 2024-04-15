@@ -14,7 +14,7 @@ import Discovery from "./Discovery";
 import Timeline from "./Timeline";
 import User from "./User";
 import {
-    StyleSheet,
+  StyleSheet,
   View,
   TextInput,
   TouchableOpacity,
@@ -27,7 +27,15 @@ import { useEffect, useState } from "react";
 const Tab = createBottomTabNavigator();
 
 export default function MyTabs({ navigation, route }) {
+
+
   const [modalVisible, setModalVisible] = useState(false);
+  
+
+
+
+
+
   // Define your custom header components
   useEffect(() => {
     if (route.params?.updatePassword) {
@@ -42,14 +50,6 @@ export default function MyTabs({ navigation, route }) {
       style={{ flexDirection: "row", height: 30, alignItems: "center" }}
     >
       <Feather name="search" size={28} color="white" />
-      {/* <TextInput
-                 onPress={() => {
-                    navigation.navigate('Search')
-                 }}
-                placeholder="search"
-                placeholderTextColor={"white"}
-                style={{marginLeft: 20, fontWeight: 'bold', fontSize: 18, width: 215, height: 28, color: 'white' }}
-            /> */}
       <Text
         style={{
           color: "#B9BDC1",
@@ -63,14 +63,23 @@ export default function MyTabs({ navigation, route }) {
     </TouchableOpacity>
   );
   const renderQRIcon = () => (
-    <TouchableOpacity onPress={()=>{
+    <TouchableOpacity onPress={() => {
       navigation.navigate("QRCode");
     }}>
-    <MaterialCommunityIcons name="qrcode-scan" size={24} color="white" />
+      <MaterialCommunityIcons name="qrcode-scan" size={24} color="white" />
 
     </TouchableOpacity>
   );
-  const renderPlusIcon = () => <Feather name="plus" size={34} color="white" />;
+  const renderPlusIcon = () => (
+    <TouchableOpacity
+      onPress={() => {
+        console.log("Plus icon pressed");
+
+      }}
+    >
+      <Feather name="plus" size={34} color="white" />
+    </TouchableOpacity>
+  );
   const renderAddUserIcon = () => (
     <Entypo name="add-user" size={24} color="white" />
   );
@@ -90,6 +99,7 @@ export default function MyTabs({ navigation, route }) {
         name="Messages"
         component={Messages}
         options={{
+          headerShown: false,
           headerTitle: "",
           headerRight: () => (
             <View
@@ -99,32 +109,49 @@ export default function MyTabs({ navigation, route }) {
                 marginRight: 15,
               }}
             >
-                {/* Modal hiển thị thông báo đổi mật khẩu thành công */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => {
-          setModalVisible(false);
-        }}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <Text style={{ fontSize: 20, marginBottom: 20 }}>
-              Đổi mật khẩu thành công!
-            </Text>
-            <Button
-              title="OK"
-              onPress={() => {
-                setModalVisible(false);
-              }}
-            />
-          </View>
-        </View>
-      </Modal>
+              {/* Modal hiển thị thông báo đổi mật khẩu thành công */}
+              <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                  setModalVisible(false);
+                }}
+              >
+                <View style={styles.modalContainer}>
+                  <View style={styles.modalContent}>
+                    <Text style={{ fontSize: 20, marginBottom: 20 }}>
+                      Đổi mật khẩu thành công!
+                    </Text>
+                    <Button
+                      title="OK"
+                      onPress={() => {
+                        setModalVisible(false);
+                      }}
+                    />
+                  </View>
+                </View>
+              </Modal>
               {renderQRIcon()}
               <View style={{ marginRight: 20 }} />
               {renderPlusIcon()}
+              <Modal
+                isVisible={modalCreateGroupVisible}
+                onBackdropPress={toggleCreateGroupModal}
+                style={{
+                  // position:'absolute',
+                  top: 180,
+                  left: 20
+                }}
+                backdropOpacity={0.65}
+                animationIn="slideInUp"
+                animationOut="slideOutDown"
+                backdropTransitionInTiming={600}
+                backdropTransitionOutTiming={600}
+                hideModalContentWhileAnimating={true}
+              >
+                <Text>hello bấcncsjajca</Text>
+              </Modal>
             </View>
           ),
           headerLeft: () => (
@@ -147,7 +174,7 @@ export default function MyTabs({ navigation, route }) {
           ),
         }}
       />
-      
+
       <Tab.Screen
         name="Contacts"
         component={Contacts}
@@ -298,40 +325,40 @@ export default function MyTabs({ navigation, route }) {
   );
 }
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      gap: 10,
-      padding: 17,
-    },
-    input: {
-      height: 40,
-      color: "#635b5b",
-      fontSize: 18,
-      width: "95%",
-      marginBottom: 10,
-      borderEndWidth: 1,
-      borderEndColor: "#635b5b",
-      borderBottomWidth: 1,
-      borderColor: "#B9BDC1",
-    },
-    button: {
-      width: "51%",
-      height: 40,
-      borderRadius: 20,
-      marginLeft: "25%",
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    modalContainer: {
-      flex: 1,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "rgba(0, 0, 0, 0.7)",
-    },
-    modalContent: {
-      backgroundColor: "white",
-      padding: 20,
-      borderRadius: 10,
-      alignItems: "center",
-    },
-  });
+  container: {
+    flex: 1,
+    gap: 10,
+    padding: 17,
+  },
+  input: {
+    height: 40,
+    color: "#635b5b",
+    fontSize: 18,
+    width: "95%",
+    marginBottom: 10,
+    borderEndWidth: 1,
+    borderEndColor: "#635b5b",
+    borderBottomWidth: 1,
+    borderColor: "#B9BDC1",
+  },
+  button: {
+    width: "51%",
+    height: 40,
+    borderRadius: 20,
+    marginLeft: "25%",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 20,
+    borderRadius: 10,
+    alignItems: "center",
+  },
+});

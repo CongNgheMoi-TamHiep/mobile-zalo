@@ -6,16 +6,30 @@ import {
     Image,
     FlatList,
     TouchableOpacity,
+    Dimensions,
 } from "react-native";
+import Modal from "react-native-modal";
+import { Feather, MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
 import axiosPrivate from "../api/axiosPrivate";
 import { auth } from "../config/firebase";
 import { useSocket } from "../context/SocketProvider";
 
 export default function Chat({ navigation }) {
+
+    // width and height of device
+    const { widthOfDevice, heightOfDevice } = Dimensions.get("window");
+
+    const [modalCreateGroupVisible, setModalCreateGroupVisible] = useState(false);
+
+    const toggleCreateGroupModal = () => {
+        setModalCreateGroupVisible(!modalCreateGroupVisible);
+    }
+
+
     //  danh sách các cuộc  hội thoại
     const [data, setData] = useState([]);
     const [loading, setLoading] = useState(true);
-    const {socket} = useSocket(); 
+    const { socket } = useSocket();
     const [chatReceived, setChatReceived] = useState(null);
     useEffect(() => {
         socket.on("getMessage", (chat) => {
@@ -140,6 +154,49 @@ export default function Chat({ navigation }) {
 
     return (
         <View style={styles.container}>
+            {/* ============================================ renderHeader */}
+            <View style={{ width: '100%', height: '8%', flexDirection: 'row', backgroundColor: 'blue' }}>
+                <TouchableOpacity
+                    style={{ width: '75%', height: '100%', flexDirection: 'row' }}
+                    onPress={() => {
+                        navigation.navigate("Search");
+                    }}
+                >
+                    <View style={{ width: '20%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                        <Feather name="search" size={28} color="white" />
+                    </View>
+                    <View style={{ width: '80%', height: '100%', justifyContent: 'center' }}>
+                        <Text
+                            style={{ color: "#B9BDC1", marginLeft: 20, fontSize: 18, fontWeight: 500, }}
+                        >
+                            Tìm kiếm
+                        </Text>
+                    </View>
+
+                </TouchableOpacity>
+                <View style={{ width: '25%', height: '100%' }}>
+                    <View style={{ width: '100%', height: '100%', flexDirection: 'row' }}>
+                        <TouchableOpacity
+                            style={{ width: '50%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                            onPress={() => {
+                                navigation.navigate("QRCode");
+                            }}
+                        >
+                            <MaterialCommunityIcons name="qrcode-scan" size={24} color="white" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={{ width: '50%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
+                            onPress={() => {
+                                setModalCreateGroupVisible(true);
+                            }}
+                        >
+                            <Feather name="plus" size={34} color="white" />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+            </View>
+            {/* ============================================ render list conversation */}
             <View style={{ width: "100%" }}>
                 <FlatList
                     style={{
@@ -150,6 +207,46 @@ export default function Chat({ navigation }) {
                     keyExtractor={(item) => item?.conversationId}
                 />
             </View>
+            {/* ============================================ render modal create group */}
+            <Modal
+                isVisible={modalCreateGroupVisible}
+                onBackdropPress={toggleCreateGroupModal}
+                style={{
+                    // position:'absolute',
+                    bottom: '32%',
+                    left: '41%',
+                }}
+                backdropOpacity={0.65}
+                animationIn="fadeIn"
+                animationOut="slideOutDown"
+                backdropTransitionInTiming={1500}
+                backdropTransitionOutTiming={600}
+                hideModalContentWhileAnimating={true}
+            >
+                <View style={{ width: '60%', height: '6%' }}>
+                    <View style={{ width: '100%', height: '100%', marginLeft: '80%', justifyContent: 'center' }}>
+                        <Feather name="plus" size={34} color="white" />
+                    </View>
+                </View>
+                <View style={{ width: '58%', height: '30%', backgroundColor: 'white', borderRadius: 20, marginTop: '0%' }}>
+                    <TouchableOpacity
+                        style={{ width: '100%', height: '20%', flexDirection: 'row' }}
+                        onPress={() => {
+                            navigation.navigate("CreateGroup");
+                        }}
+                    >
+                        <View style={{ width: '30%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                            <AntDesign name="addusergroup" size={30} color="black" />
+                        </View>
+                        <View style={{ width: '70%', height: '100%', justifyContent: 'center' }}>
+                            <Text style={{ fontSize: 15, fontWeight: '500', textDecorationLine: "underline" }}>
+                                Create group
+                            </Text>
+                        </View>
+                    </TouchableOpacity>
+                </View>
+            </Modal>
+
         </View>
     );
 }

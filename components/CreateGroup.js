@@ -1,31 +1,30 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, FlatList, KeyboardAvoidingView, Platform } from "react-native";
+import {
+    StyleSheet,
+    Text,
+    View,
+    Image,
+    FlatList,
+    TouchableOpacity,
+    Dimensions,
+    TextInput
+} from "react-native";
+
 import { Ionicons, AntDesign } from '@expo/vector-icons';
 import CheckBox from 'react-native-check-box'
 import axiosPrivate from "../api/axiosPrivate";
 import { useCurrentUser } from "../App";
-import Modal from "react-native-modal";
-import { set } from "date-fns";
 import { FontAwesome } from '@expo/vector-icons';
 
-export default function ForwardMessage({ route, navigation }) {
 
 
-    const mesageForward = route.params.message;
-    const conversationId = route.params.conversationId;
+export default function CreateGroup({ navigation, route }) {
 
     const currentUser = useCurrentUser();
     const [data, setData] = useState([]);
     const [selectedIds, setSelectedIds] = useState([]);
     const [selectedCount, setSelectedCount] = useState(0);
 
-    const [isTextInputVisible, setIsTextInputVisible] = useState(false);
-    const [textInputPosition, setTextInputPosition] = useState('bottom');
-
-    const toggleTextInputVisibility = () => {
-        setIsTextInputVisible(!isTextInputVisible);
-        setTextInputPosition(isTextInputVisible ? 'bottom' : 'center');
-    };
 
 
     const [isSelected, setSelection] = useState(false);
@@ -55,18 +54,7 @@ export default function ForwardMessage({ route, navigation }) {
         setSelectedCount(selectedIds.length);
     }, [selectedIds]);
 
-    // console.log("danh sach ban be da chon:", selectedIds)
-    // xu li chon nguoi de chia se tin nhan
-    // const handleCheckboxToggle = (id) => {
-    //     if (selectedIds.includes(id)) {
-    //         // Nếu ID đã tồn tại trong danh sách, loại bỏ nó
-    //         setSelectedIds(selectedIds.filter(itemId => itemId !== id));
-    //     } else {
-    //         // Nếu ID chưa tồn tại trong danh sách, thêm vào
-    //         setSelectedIds([...selectedIds, id]);
-    //         // setIsVisibleModal(true);
-    //     }
-    // };
+
     const handleCheckboxToggle = (userId) => {
         const newSelectedIds = selectedIds.includes(userId)
             ? selectedIds.filter(id => id !== userId) // Bỏ chọn nếu đã chọn trước đó
@@ -74,37 +62,9 @@ export default function ForwardMessage({ route, navigation }) {
         setSelectedIds(newSelectedIds);
     };
 
-    // xử lí chia sẻ tin nhắn cho bạn bè
-
-    const handleForwardMessage = async () => {
-        for (const id of selectedIds) {
-            try {
-                const text = mesageForward?.text;
-                const video = mesageForward?.video;
-                const image = mesageForward?.image;
-                const chat = await axiosPrivate.post(`/chat`, {
-                    receiverId: id,
-                    senderId: currentUser.user.uid,
-                    content: {
-                        ...(text && { text }),
-                        ...(video && { video }),
-                        ...(image && { image }),
-                    }
-                });
-                console.log("chat: ", chat);
-                console.log("chuyen tin nhan thanh cong");
-                navigation.goBack();
-            } catch (error) {
-                console.error("Error sending message text:", error);
-            }
-        }
-    }
-
-
-
     const renderFriends = ({ item }) => {
         return (<TouchableOpacity
-            style={{ width: '100%', height: 50, flexDirection: 'row', marginBottom: 10}}
+            style={{ width: '100%', height: 50, flexDirection: 'row', marginBottom: 10 }}
             onPress={() => {
                 setSelection(!isSelected);
                 handleCheckboxToggle(item.userId);
@@ -140,6 +100,7 @@ export default function ForwardMessage({ route, navigation }) {
             </View>
         </TouchableOpacity>)
     }
+
 
     return (
         <View style={styles.container}>
@@ -180,7 +141,7 @@ export default function ForwardMessage({ route, navigation }) {
                     <Text
                         style={{ fontSize: 15, fontWeight: '500' }}
                     >
-                        Chia sẽ đến
+                        Tạo nhóm
                     </Text>
                 </View>
             </View>
@@ -204,9 +165,9 @@ export default function ForwardMessage({ route, navigation }) {
                 <View style={{ width: '100%', height: 80, position: "absolute", bottom: 0 }}>
                     <TouchableOpacity
                         style={{ width: '100%', height: '50%' }}
-                        onPress={() => {
-                            handleForwardMessage();
-                        }}
+                        // onPress={() => {
+                        //     handleForwardMessage();
+                        // }}
                     >
                         <FontAwesome name="send-o" size={32} color="blue" style={{ marginLeft: '80%' }} />
                     </TouchableOpacity>
@@ -220,16 +181,13 @@ export default function ForwardMessage({ route, navigation }) {
                     </View>
                 </View>
             )}
-
         </View>
-    );
+    )
 }
-
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F7F7F7'
-        // justifyContent: "center",
-        // alignItems: "center",
+        backgroundColor: "#fff",
     },
+
 });
