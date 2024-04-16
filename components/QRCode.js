@@ -9,57 +9,60 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useState, useEffect } from "react";
-import { BarCodeScanner } from "expo-barcode-scanner";
+// import { BarCodeScanner } from "expo-barcode-scanner";
 import { Ionicons } from "@expo/vector-icons";
 import { MaterialIcons } from "@expo/vector-icons";
 export default function SwiperComponent({ navigation }) {
-  const [hasPermission, setHasPermission] = useState(null);
-  const [scanned, setScanned] = useState(false);
-  const [text, setText] = useState("Không tìm thấy mã QA nào");
+  // const [hasPermission, setHasPermission] = useState(null);
+  // const [scanned, setScanned] = useState(false);
+  // const [text, setText] = useState("Không tìm thấy mã QA nào");
 
-  const askForCameraPermission = () => {
-    (async () => {
-      const { status } = await BarCodeScanner.requestPermissionsAsync();
-      setHasPermission(status === "granted");
-    })();
-  };
+  // const askForCameraPermission = () => {
+  //   (async () => {
+  //     const { status } = await BarCodeScanner.requestPermissionsAsync();
+  //     setHasPermission(status === "granted");
+  //   })();
+  // };
 
-  // Request Camera Permission
-  useEffect(() => {
-    askForCameraPermission();
-  }, []);
+  // // Request Camera Permission
+  // useEffect(() => {
+  //   askForCameraPermission();
+  // }, []);
 
-  // What happens when we scan the bar code
-  const handleBarCodeScanned = ({ type, data }) => {
-    setScanned(true);
-    setText(data);
-    console.log("Type: " + type + "\nData: " + data);
-  };
+  // // What happens when we scan the bar code
+  // const handleBarCodeScanned = ({ type, data }) => {
+  //   setScanned(true);
+  //   setText(data);
+  //   console.log("Type: " + type + "\nData: " + data);
+  // };
 
-  // Check permissions and return the screens
-  if (hasPermission === null) {
-    return (
-      <View style={styles.container}>
-        <Text>Requesting for camera permission</Text>
-      </View>
-    );
-  }
-  if (hasPermission === false) {
-    return (
-      <View style={styles.container}>
-        <Text style={{ margin: 10 }}>Không thể truy cập camera</Text>
-        <Button
-          title={"Cho phép"}
-          onPress={() => askForCameraPermission()}
-        />
-      </View>
-    );
-  }
+  // // Check permissions and return the screens
+  // if (hasPermission === null) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text>Requesting for camera permission</Text>
+  //     </View>
+  //   );
+  // }
+  // if (hasPermission === false) {
+  //   return (
+  //     <View style={styles.container}>
+  //       <Text style={{ margin: 10 }}>Không thể truy cập camera</Text>
+  //       <Button
+  //         title={"Cho phép"}
+  //         onPress={() => askForCameraPermission()}
+  //       />
+  //     </View>
+  //   );
+  // }
 
   // Return the View
   return (
     <View style={styles.container}>
-      <View style={styles.barcodebox}>
+    <Text>
+      aa
+    </Text>
+     <View style={styles.barcodebox}>
         <TouchableOpacity
           style={{ position: "absolute", top: 14, left: 20, zIndex: 1 }}
           onPress={() => {

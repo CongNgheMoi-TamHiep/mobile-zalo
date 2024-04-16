@@ -3,7 +3,6 @@ import { useCurrentUser } from "../App";
 import { useSocket } from "./SocketProvider";
 import { Image, Text, View, TouchableOpacity, StyleSheet } from "react-native";
 import { set } from "date-fns";
-import moment from "moment";
 
 import Modal from "react-native-modal";
 import axiosPrivate from "../api/axiosPrivate";
