@@ -43,6 +43,8 @@ export default function Conversations({ route, navigation }) {
     // thong tin user tim kiem
     const searchUser = route.params?.searchUser;
     const conversationInfo = route.params?.conversationInfo;
+    console.log('conversationInfo:');
+    console.log(conversationInfo);
     // kiểm tra xem người  dùng có nhập chữ hay không
     const [isTyping, setIsTyping] = useState(false);
     // hiệu ứng dấu nháy trong phần tin nhắn

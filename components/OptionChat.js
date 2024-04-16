@@ -43,13 +43,13 @@ const OptionChat = ({ navigation, route }) => {
       setIsGroup(false);
     }
   }, []);
+
   async function GiaiTanNhom(){
     try {
         const response = await axiosPrivate.delete(
-          `/group/dissolution/${dataConversation._id}`
+          `/group/dissolution/${dataConversation.conversationId}`
         );
-       
-      
+        navigation.navigate("Messages");
       } catch (error) {
         console.error("Giải tán nhóm false:", error);
       }
