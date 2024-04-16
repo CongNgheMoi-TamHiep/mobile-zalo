@@ -37,9 +37,9 @@ export default function CreateGroup({ navigation, route }) {
           if (route.params?.id && response.length > 0) {
             const friendToSelect = response.find(friend => friend.userId == route.params.id);
             if (friendToSelect) {
-                handleCheckboxToggle(friendToSelect.userId);
+              handleCheckboxToggle(friendToSelect.userId);
             }
-        }
+          }
         } catch (error) {
           console.error("Error fetching data:", error);
         }
@@ -127,23 +127,23 @@ export default function CreateGroup({ navigation, route }) {
   };
   const [groupName, setGroupName] = useState("");
   // hàm tạo nhóm
-  async function handleCreateGroup(){
-    let array =[]
-        selectedIds.forEach((id) => {
-            array.push({ "_id": id });
-        });
-      const response = await axiosPrivate.post(`/group`, {
-          name: groupName,
-          members:array
-      });
-      console.log("response: ");
-      console.log(response);
-      navigation.navigate("Conversations", {
-        conversationInfo: {
-          ...response, 
-          conversationId: response._id,
-        }
-      });
+  async function handleCreateGroup() {
+    let array = []
+    selectedIds.forEach((id) => {
+      array.push({ "_id": id });
+    });
+    const response = await axiosPrivate.post(`/group`, {
+      name: groupName,
+      members: array
+    });
+    console.log("response: ");
+    console.log(response);
+    navigation.navigate("Conversations", {
+      conversationInfo: {
+        ...response,
+        conversationId: response._id,
+      }
+    });
   }
   return (
     <View style={styles.container}>
@@ -205,7 +205,7 @@ export default function CreateGroup({ navigation, route }) {
         </View>
         <View
           style={{
-           
+
             width: "90%",
             height: 25,
             marginLeft: "5%",
@@ -216,8 +216,8 @@ export default function CreateGroup({ navigation, route }) {
           <Text style={{ fontSize: 15, fontWeight: "500" }}>Tạo nhóm</Text>
         </View>
         <TextInput
-        value={groupName}
-        onChangeText={(text) => setGroupName(text)}
+          value={groupName}
+          onChangeText={(text) => setGroupName(text)}
           style={{
             paddingLeft: 10,
             width: "90%",
@@ -253,7 +253,7 @@ export default function CreateGroup({ navigation, route }) {
           })}
         </View>
       </View>
-      {selectedCount > 1 && groupName.length!=0 ? (
+      {selectedCount > 1 && groupName.length != 0 ? (
         <View
           style={{ width: "100%", height: 80, position: "absolute", bottom: 0 }}
         >

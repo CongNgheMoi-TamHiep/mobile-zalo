@@ -13,6 +13,7 @@ import { Feather, MaterialCommunityIcons, AntDesign } from "@expo/vector-icons";
 import axiosPrivate from "../api/axiosPrivate";
 import { auth } from "../config/firebase";
 import { useSocket } from "../context/SocketProvider";
+import { set } from "date-fns";
 
 export default function Chat({ navigation }) {
 
@@ -37,25 +38,23 @@ export default function Chat({ navigation }) {
             setChatReceived(chat);
         })
         socket.on("newConversation", (conversation) => {
+            console.log("whuyyyyyyy");
             setNewConversation(conversation);
         })
-    }, []);
+        socket.on("deleteConversation", (conversationId) => {
+            console.log("delete socket: ", conversationId);
+            setData((prevData) => {
+                return [...prevData.filter((item) => item.conversationId !== conversationId)]
+            })
+        })
+    });
 
     useEffect(() => {
         if (newConversation) {
             console.log("newConversation:");
             console.log(newConversation);
             setData((prevData) => {
-                const newData = [...prevData];
-                const index = newData.findIndex(
-                    (conversation) => conversation.conversationId === newConversation.conversationId
-                );
-                if (index !== -1) {
-                    newData[index] = newConversation;
-                } else {
-                    newData.unshift(newConversation);
-                }
-                return newData;
+                return [newConversation, ...prevData];
             });
         }
     }, [newConversation]);
@@ -221,7 +220,7 @@ export default function Chat({ navigation }) {
 
             </View>
             {/* ============================================ render list conversation */}
-            <View style={{ width: "100%" }}>
+            <View style={{ width: "100%", height: '92%' }}>
                 <FlatList
                     style={{
                         height: '100%'
@@ -257,6 +256,7 @@ export default function Chat({ navigation }) {
                         style={{ width: '100%', height: '20%', flexDirection: 'row' }}
                         onPress={() => {
                             navigation.navigate("CreateGroup");
+                            setModalCreateGroupVisible(false);
                         }}
                     >
                         <View style={{ width: '30%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
