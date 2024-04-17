@@ -38,7 +38,8 @@ export default function Chat({ navigation }) {
             setChatReceived(chat);
         })
         socket.on("newConversation", (conversation) => {
-            console.log("whuyyyyyyy");
+            console.log("newconversation:");
+            console.log(conversation);
             setNewConversation(conversation);
         })
         socket.on("deleteConversation", (conversationId) => {
@@ -51,8 +52,7 @@ export default function Chat({ navigation }) {
 
     useEffect(() => {
         if (newConversation) {
-            console.log("newConversation:");
-            console.log(newConversation);
+         
             setData((prevData) => {
                 return [newConversation, ...prevData];
             });
@@ -78,6 +78,14 @@ export default function Chat({ navigation }) {
             }
         })();
     }, []);
+
+    useEffect(() => {
+        if(data?.length > 0) { 
+            data.map((item) => {
+                socket.emit("joinRoom", item.conversationId);
+            })
+        }
+    }, [data])
 
     if (loading) {
         // Hiển thị loading indicator hoặc bất kỳ nội dung đang chờ nào bạn muốn
