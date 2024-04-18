@@ -445,7 +445,9 @@ export default function Conversations({ route, navigation }) {
             headerRight: () => (
                 <View style={{ width: 120, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                     <SimpleLineIcons name="phone" size={24} color="white" />
-                    <Ionicons name="videocam-outline" size={28} color="white" />
+                    <TouchableOpacity onPress={handleCallVideo}>
+                <Ionicons name="videocam-outline" size={28} color="white" />
+                  </TouchableOpacity>
                     <TouchableOpacity
                         onPress={() => navigation.navigate('OptionChat', {
                             conversationInfo: conversationInfo,
@@ -1095,41 +1097,41 @@ export default function Conversations({ route, navigation }) {
       />
     );
   };
-  // hàm thực hiện gọi video
-  const [videoCall, setVideoCall] = useState(false);
-  const channel = conversationInfo?.conversationId;
-  // biến kiểm tra người nhận không bắt máy
-  const [isBusy, setIsBusy] = useState(false);
-  useEffect(() => {
-    socket.on("end-call", ({ channel }) => {
-      setVideoCall(false);
-     
-    });
-  }, [socket.id]);
-  const connectionData = {
-    appId: "5a55004d2d524938a0edde0ecd2349ae",
-    channel: channel,
-  };
-  const callbacks = {
-  EndCall: () => {
-        socket.emit("end-call", {channel})
-        setVideoCall(false)
-      },
-  };
+ // hàm thực hiện gọi video
+ const [videoCall, setVideoCall] = useState(false);
+ const channel = conversationInfo?.conversationId;
+ // biến kiểm tra người nhận không bắt máy
+ const [isBusy, setIsBusy] = useState(false);
+ useEffect(() => {
+   socket.on("end-call", ({ channel }) => {
+     setVideoCall(false);
+    
+   });
+ }, [socket.id]);
+ const connectionData = {
+   appId: "5a55004d2d524938a0edde0ecd2349ae",
+   channel: channel,
+ };
+ const callbacks = {
+ EndCall: () => {
+       socket.emit("end-call", {channel})
+       setVideoCall(false)
+     },
+ };
 
-  const handleCallVideo = () => {
-    socket.emit("video-call", { 
-      channel: conversationInfo?.conversationId, 
-      caller: currentUser.user.uid,
-    });
-    setVideoCall(true);
-  };
-  // Giao diện
-  return (
-    <View style={{ width: "100%", height: "100%" }}>
-      {videoCall ? (
-        <AgoraUIKit connectionData={connectionData} rtcCallbacks={callbacks} />
-      ):<GiftedChat
+ const handleCallVideo = () => {
+   socket.emit("video-call", { 
+     channel: conversationInfo?.conversationId, 
+     caller: currentUser.user.uid,
+   });
+   setVideoCall(true);
+ };
+ // Giao diện
+ return (
+   <View style={{ width: "100%", height: "100%" }}>
+     {videoCall ? (
+       <AgoraUIKit connectionData={connectionData} rtcCallbacks={callbacks} />
+     ):<GiftedChat
       messages={messages}
       onSend={(newMessages) => onSend(newMessages)}
       onInputTextChanged={onInputTextChanged}

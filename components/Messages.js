@@ -114,7 +114,7 @@ export default function Chat({ navigation }) {
     }
 
     const formatTimeSendMessage = (timeString) => {
-        const timeFormat = timeString.slice(11, 16);
+        const timeFormat = timeString?.slice(11, 16);
         return timeFormat;
     };
     // render lên màn hình các đoạn chat của user
