@@ -7,7 +7,8 @@ import {
   TouchableOpacity,
   ScrollView,
   SectionList,
-  Modal,
+  TextInput,
+  FlatList
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 
@@ -24,36 +25,125 @@ import {
   FontAwesome5,
   MaterialCommunityIcons,
 } from "@expo/vector-icons";
+import Modal from "react-native-modal";
 import { useCurrentUser } from "../App";
 import axiosPrivate from "../api/axiosPrivate";
-const OptionChat = ({ navigation, route }) => {
+import { useNavigation } from '@react-navigation/native'
+import { set } from "date-fns";
+const OptionChat = ({ route }) => {
+  const navigation = useNavigation();
   const [showModal, setShowModal] = useState(false);
   const [isGroup, setIsGroup] = useState(false);
-  const [dataConversation, setDataConversation] = useState({});
+  const [dataConversation, setDataConversation] = useState([]);
   const [isLeader, setIsLeader] = useState(false);
   const currentUser = useCurrentUser();
-  useEffect(() => {
-    setDataConversation(route.params.conversationInfo);
+  const [selectedUser, setSelectedUser] = useState(null);
+
+  const listMembers = route.params?.listMembers;
+  // console.log('listMembers:', listMembers);
+
+
+  const [isVisibleModalOfMember, setIsVisibleModalOfMember] = useState(false);
+  const [isVisibleModalOfAdmin, setIsVisibleModalOfAdmin] = useState(false);
+  const [isConfirmModalOfAdmin, setIsConfirmModalOfAdmin] = useState(false);
+
+  const toggleVisibleModalOfMember = () => {
+    setIsVisibleModalOfMember(!isVisibleModalOfMember);
+  }
+  const toggleVisibleModalOfAdmin = () => {
+    setIsVisibleModalOfAdmin(!isVisibleModalOfAdmin);
+  }
+  const toggleConfirmModalOfAdmin = () => {
+    setIsConfirmModalOfAdmin(!isConfirmModalOfAdmin);
+  }
+  const fetchData = () => {
+
+    setDataConversation(route.params?.conversationInfo);
     if (route.params.conversationInfo.type === "group") {
       setIsGroup(true);
       if (route.params.conversationInfo.adminId == currentUser.user.uid) {
         setIsLeader(true);
+        // console.log("ádfassssssss", route.params.conversationInfo);
       }
     } else {
       setIsGroup(false);
     }
+  }
+
+  useEffect(() => {
+    const unsubcribe = navigation.addListener("focus", () => {
+      // console.log("sadjfasf");
+      fetchData();
+    })
+    return unsubcribe;
+  }, [navigation]);
+
+  useEffect(() => {
+    fetchData();
   }, []);
 
-  async function GiaiTanNhom(){
+  const renderFriend = (item) => (
+    <TouchableOpacity
+      style={{ width: '90%', height: 50, marginLeft: '5%', flexDirection: 'row', marginTop: 10 }}
+      onPress={() => {
+        // console.log('press item', item);
+        setSelectedUser(item);
+        setIsConfirmModalOfAdmin(true);
+        setIsVisibleModalOfAdmin(false);
+      }}
+    >
+      <View style={{ width: '20%', height: '100%', justifyContent: 'center', alignItems: 'center' }}>
+        <Image
+          source={{ uri: item.avatar }}
+          style={{ width: 50, height: 50, borderRadius: 50 }}
+        />
+      </View>
+      <View style={{ width: '80%', height: '100%', justifyContent: 'center' }}>
+        <Text style={{ fontSize: 15, fontWeight: '600' }}>
+          {item.name}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  )
+  async function GiaiTanNhom() {
     try {
-        const response = await axiosPrivate.delete(
-          `/group/dissolution/${dataConversation.conversationId}`
-        );
-        navigation.navigate("Messages");
-      } catch (error) {
-        console.error("Giải tán nhóm false:", error);
-      }
+      const response = await axiosPrivate.delete(
+        `/group/dissolution/${dataConversation.conversationId}`
+      );
+      navigation.navigate("Messages");
+    } catch (error) {
+      console.error("Giải tán nhóm false:", error);
+    }
   }
+
+  // thành viên khi rời khỏi nhóm
+  const handleMemberLeaveGroup = async () => {
+    try {
+      const response = await axiosPrivate.patch(`/group/outGroup/${dataConversation.conversationId}`);
+      console.log("response leave group:", response);
+      navigation.navigate("Messages");
+    } catch (error) {
+      console.error("Error member leave group:", error);
+    }
+  }
+
+  // admin khi rời khỏi nhóm
+  const handleAdminleaveGroup = async () => {
+    try {
+      // chuyển quyền trước khi out
+      await axiosPrivate.patch(`/group/transferAdmin/${dataConversation.conversationId}`, {
+        userId: selectedUser._id
+      });
+      // sau khi chuyển quyền thì mới out
+      await axiosPrivate.patch(`/group/outGroup/${dataConversation.conversationId}`);
+
+      navigation.navigate("Messages");
+    } catch (error) {
+      console.error("Error admin leave group:", error);
+    }
+  }
+
+
   return (
     <View style={styles.container}>
       <ScrollView style={{ width: "100%", height: "100%" }}>
@@ -97,7 +187,12 @@ const OptionChat = ({ navigation, route }) => {
             </View>
             {isGroup ? (
               <View style={styles.ViewItemTop}>
-                <TouchableOpacity style={styles.ViewButtonTop}>
+                <TouchableOpacity
+                  style={styles.ViewButtonTop}
+                  onPress={() => {
+                    navigation.navigate("AddMembers", { dataConversation: dataConversation });
+                  }}
+                >
                   <AntDesign name="addusergroup" size={24} color="black" />
                 </TouchableOpacity>
 
@@ -202,7 +297,6 @@ const OptionChat = ({ navigation, route }) => {
                   </View>
                 </View>
               </Modal>
-
               <Text
                 style={{
                   width: 60,
@@ -395,12 +489,17 @@ const OptionChat = ({ navigation, route }) => {
               }}
               style={styles.item}
             >
-              <View style={styles.contentButton}>
+              <TouchableOpacity
+                style={styles.contentButton}
+                onPress={() => {
+                  navigation.navigate("ViewMember", { dataConversation: dataConversation });
+                }}
+              >
                 <Feather name="users" size={22} color="#767A7F" />
                 <Text style={styles.text}>
                   Xem thành viên ({dataConversation?.members.length})
                 </Text>
-              </View>
+              </TouchableOpacity>
             </TouchableOpacity>
           </View>
         ) : (
@@ -541,6 +640,23 @@ const OptionChat = ({ navigation, route }) => {
             </View>
           </TouchableOpacity>
         </View>
+        {isLeader ? (
+          <View
+            style={{ backgroundColor: "white", width: "100%", marginVertical: 2 }}
+          >
+            <TouchableOpacity
+              style={styles.item}
+              onPress={() => {
+                navigation.navigate('TranferAdmin', { dataConversation: dataConversation });
+              }}
+            >
+              <View style={styles.contentButton}>
+                <SimpleLineIcons name="user-unfollow" size={24} color="black" />
+                <Text style={styles.text}>Chuyển quyền trưởng nhóm</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
         <View
           style={{ backgroundColor: "white", width: "100%", marginVertical: 2 }}
@@ -563,11 +679,11 @@ const OptionChat = ({ navigation, route }) => {
             <TouchableOpacity
               style={styles.item}
               onPress={() => {
-                let datasend = {
-                  userId: account.id,
-                  idGroup: route.params.idGroup,
-                };
-                outGroup(datasend);
+                if (isLeader) {
+                  setIsVisibleModalOfAdmin(true);
+                } else {
+                  setIsVisibleModalOfMember(true);
+                }
               }}
             >
               <View style={styles.contentButton}>
@@ -640,8 +756,8 @@ const OptionChat = ({ navigation, route }) => {
             }}
           >
             <TouchableOpacity
-            onPress={GiaiTanNhom}
-            style={styles.item}>
+              onPress={GiaiTanNhom}
+              style={styles.item}>
               <View style={styles.contentButton}>
                 <MaterialCommunityIcons
                   name="delete-outline"
@@ -654,6 +770,142 @@ const OptionChat = ({ navigation, route }) => {
           </View>
         ) : null}
       </ScrollView>
+      {/* modal leave chat of members */}
+      <Modal
+        isVisible={isVisibleModalOfMember}
+        onBackdropPress={toggleVisibleModalOfMember}
+        style={{
+          // position:'absolute',
+          top: 0,
+          right: '5%',
+          width: '100%',
+          height: '100%',
+        }}
+        backdropOpacity={0.4}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropTransitionInTiming={600}
+        backdropTransitionOutTiming={600}
+        hideModalContentWhileAnimating={true}
+      >
+        <View style={{ width: '100%', height: 250, borderRadius: 10, backgroundColor: 'white' }}>
+          <View style={{ width: '100%', height: 70, marginTop: 20, justifyContent: 'center', borderBottomWidth: 0.5 }}>
+            <Text style={{ fontSize: 20, fontWeight: '600', textAlign: 'center' }}>
+              Rời khỏi nhóm và xóa cuộc hội thoại?
+            </Text>
+          </View>
+          <View style={{ width: '100%', height: 150 }}>
+            <TouchableOpacity
+              style={{ width: '80%', height: '30%', backgroundColor: 'red', marginLeft: '10%', marginTop: 20, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}
+              onPress={handleMemberLeaveGroup}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '600', color: 'white' }}>
+                Rời nhóm
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ width: '80%', height: '30%', marginLeft: '10%', marginTop: 20, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}
+              onPress={() => {
+                setIsVisibleModalOfMember(false);
+              }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '600', color: 'black' }}>
+                Hủy
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+      </Modal>
+      {/* modal leave chat of admin */}
+      <Modal
+        isVisible={isVisibleModalOfAdmin}
+        onBackdropPress={toggleVisibleModalOfAdmin}
+        style={{
+          // position:'absolute',
+          top: 0,
+          // left: 0,
+          right: '5%',
+          width: '100%',
+          height: '100%',
+        }}
+        backdropOpacity={0.4}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropTransitionInTiming={600}
+        backdropTransitionOutTiming={600}
+        hideModalContentWhileAnimating={true}
+      >
+        <View style={{ width: '100%', height: 500, borderRadius: 10, backgroundColor: 'white' }}>
+          <View style={{ width: '100%', height: 70, marginTop: 20, justifyContent: 'center', borderBottomWidth: 0.5 }}>
+            <Text style={{ fontSize: 20, fontWeight: '600', textAlign: 'center' }}>
+              Chọn trưởng nhóm mới trước khi rời
+            </Text>
+          </View>
+          <View style={{ width: '90%', height: 30, marginLeft: '5%', backgroundColor: 'gray', marginTop: 10, borderRadius: 10 }}>
+            <TextInput
+              placeholder="Tìm kiếm"
+            />
+          </View>
+          <View style={{ width: '100%', height: 300, marginTop: 20 }}>
+            <FlatList
+              data={listMembers}
+              renderItem={({ item }) => renderFriend(item)}
+              keyExtractor={item => item._id}
+            />
+          </View>
+        </View>
+      </Modal>
+      {/* modal confirm leave chat of admin */}
+      <Modal
+        isVisible={isConfirmModalOfAdmin}
+        onBackdropPress={toggleConfirmModalOfAdmin}
+        style={{
+          // position:'absolute',
+          top: 0,
+          // left: 0,
+          // right: '5%',
+          // width: '100%',
+          // height: '100%',
+        }}
+        backdropOpacity={0.4}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropTransitionInTiming={600}
+        backdropTransitionOutTiming={600}
+        hideModalContentWhileAnimating={true}
+      >
+        <View style={{ width: '100%', height: 250, borderRadius: 10, backgroundColor: 'white' }}>
+          <View style={{ width: '100%', height: 70, marginTop: 20, justifyContent: 'center', borderBottomWidth: 0.5 }}>
+            <Text style={{ fontSize: 20, fontWeight: '600', textAlign: 'center' }}>
+              Rời khỏi nhóm và xóa cuộc hội thoại?
+            </Text>
+          </View>
+          <View style={{ width: '100%', height: 150 }}>
+            <TouchableOpacity
+              style={{ width: '80%', height: '30%', backgroundColor: 'red', marginLeft: '10%', marginTop: 20, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}
+              onPress={handleAdminleaveGroup}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '600', color: 'white' }}>
+                Rời nhóm
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ width: '80%', height: '30%', marginLeft: '10%', marginTop: 20, borderRadius: 20, justifyContent: 'center', alignItems: 'center' }}
+              onPress={() => {
+                setIsConfirmModalOfAdmin(false);
+                setIsVisibleModalOfAdmin(true);
+              }}
+            >
+              <Text style={{ fontSize: 18, fontWeight: '600', color: 'black' }}>
+                Hủy
+              </Text>
+            </TouchableOpacity>
+
+          </View>
+        </View>
+
+      </Modal>
     </View>
   );
 };

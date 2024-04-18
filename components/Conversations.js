@@ -415,72 +415,53 @@ export default function Conversations({ route, navigation }) {
         ? `${originalTitle.slice(0, maxTitleLength - 3)}...`
         : originalTitle;
 
-    navigation.setOptions({
-      title: "", // Đổi tiêu đề
-      headerStyle: {
-        backgroundColor: "#0C8AFF", // Thay đổi màu nền của header
-      },
-      headerLeft: () => (
-        <View
-          style={{
-            width: 250,
-            flexDirection: "row",
-            alignItems: "center",
-            marginLeft: 10,
-          }}
-        >
-          <AntDesign
-            name="left"
-            size={24}
-            color="white"
-            onPress={() => navigation.navigate("Messages")}
-          />
-          <Text
-            style={{
-              marginLeft: 10,
-              width: 215,
-              fontSize: 18,
-              fontWeight: "bold",
-              color: "#fff",
-              maxWidth: 215, // Giới hạn chiều rộng của Text
-              overflow: "hidden",
-              //textOverflow: 'ellipsis', // Hiển thị dấu ba chấm khi vượt quá chiều rộng
-            }}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {displayedTitle}
-          </Text>
-        </View>
-      ),
-      headerRight: () => (
-        <View
-          style={{
-            width: 120,
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <SimpleLineIcons name="phone" size={24} color="white" />
-          <TouchableOpacity onPress={handleCallVideo}>
-            <Ionicons name="videocam-outline" size={28} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() =>
-              navigation.navigate("OptionChat", {
-                conversationInfo: conversationInfo,
-              })
-            }
-          >
-            <AntDesign name="bars" size={28} color="white" />
-          </TouchableOpacity>
-        </View>
-      ),
-    });
-  }, [navigation, searchUser]);
-  // console.log("conversation: ");
-  // console.log(conversation);
+
+        navigation.setOptions({
+            title: "", // Đổi tiêu đề
+            headerStyle: {
+                backgroundColor: '#0C8AFF', // Thay đổi màu nền của header
+            },
+            headerLeft: () => (
+                <View style={{ width: 250, flexDirection: 'row', alignItems: 'center', marginLeft: 10 }}>
+                    <AntDesign name="left" size={24} color="white" onPress={() => navigation.navigate("Messages")} />
+                    <Text
+                        style={{
+                            marginLeft: 10,
+                            width: 215,
+                            fontSize: 18,
+                            fontWeight: 'bold',
+                            color: '#fff',
+                            maxWidth: 215, // Giới hạn chiều rộng của Text
+                            overflow: 'hidden',
+                            //textOverflow: 'ellipsis', // Hiển thị dấu ba chấm khi vượt quá chiều rộng
+                        }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                    >
+                        {displayedTitle}
+                    </Text>
+                </View>
+            ),
+            headerRight: () => (
+                <View style={{ width: 120, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <SimpleLineIcons name="phone" size={24} color="white" />
+                    <Ionicons name="videocam-outline" size={28} color="white" />
+                    <TouchableOpacity
+                        onPress={() => navigation.navigate('OptionChat', {
+                            conversationInfo: conversationInfo,
+                            listMembers: conversationInfo?.members.filter(member => member._id !== currentUser.user.uid),
+                        })}
+                    >
+                        <AntDesign name="bars" size={28} color="white" />
+
+                    </TouchableOpacity>
+                </View>
+            )
+
+        });
+    }, [navigation, searchUser]);
+    // console.log("conversation: ");
+    // console.log(conversation);
 
   // Gui tai lieu
   const pickDocument = async () => {

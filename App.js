@@ -32,6 +32,9 @@ import ForwardMessage from "./components/ForwardMessage.js";
 import DanhBaMay from "./components/DanhBaMay.js";
 import CreateGroup from "./components/CreateGroup.js";
 import OptionChat from "./components/OptionChat.js";
+import ViewMember from "./components/ViewMember.js";
+import AddMembers from './components/AddMembers.js';
+import TranferAdmin from './components/TranferAdmin.js'
 // ...
 
 const auth = getAuth();
@@ -57,6 +60,21 @@ function ChatStack() {
         <Stack.Screen
           name="MyTabs"
           component={MyTabs}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="TranferAdmin"
+          component={TranferAdmin}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="AddMembers"
+          component={AddMembers}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="ViewMember"
+          component={ViewMember}
           options={{ headerShown: false }}
         />
         <Stack.Screen
@@ -91,60 +109,60 @@ function ChatStack() {
           options={{ headerShown: false }}
         />
         <Stack.Screen
-        name="ChangePassword"
-        component={ChangePassword}
-        options={{
-          headerShown: true,
-          title: "Cập nhật mật khẩu",
-          headerStyle: {
-            backgroundColor: "#00aaff",
-          },
-          headerTintColor: "white",
-        }}
-      />
-       <Stack.Screen
-        name="FriendRequest"
-        component={FriendRequest}
-        options={{
-          headerShown: true,
-          title: "Lời mời kết bạn",
-          headerStyle: {
-            backgroundColor: "#00aaff",
-          },
-          headerTintColor: "white",
-        }}
-      />
-      <Stack.Screen
-        name="DanhBaMay"
-        component={DanhBaMay}
-        options={{
-          headerShown: true,
-          title: "Danh bạ máy",
-          headerStyle: {
-            backgroundColor: "#00aaff",
-          },
-          headerTintColor: "white",
-        }}
-      />
-       <Stack.Screen
-        name="OptionChat"
-        component={OptionChat}
-        options={{
-          headerShown: true,
-          title: "Tùy chọn",
-          headerStyle: {
-            backgroundColor: "#00aaff",
-          },
-          headerTintColor: "white",
-        }}
-      />
-       <Stack.Screen
-        name="QRCode"
-        component={QRCode}
-        options={{
-          headerShown: false,
-        }}
-      />
+          name="ChangePassword"
+          component={ChangePassword}
+          options={{
+            headerShown: true,
+            title: "Cập nhật mật khẩu",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
+          }}
+        />
+        <Stack.Screen
+          name="FriendRequest"
+          component={FriendRequest}
+          options={{
+            headerShown: true,
+            title: "Lời mời kết bạn",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
+          }}
+        />
+        <Stack.Screen
+          name="DanhBaMay"
+          component={DanhBaMay}
+          options={{
+            headerShown: true,
+            title: "Danh bạ máy",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
+          }}
+        />
+        <Stack.Screen
+          name="OptionChat"
+          component={OptionChat}
+          options={{
+            headerShown: true,
+            title: "Tùy chọn",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
+          }}
+        />
+        <Stack.Screen
+          name="QRCode"
+          component={QRCode}
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack.Navigator>
     </SafeAreaView>
   );

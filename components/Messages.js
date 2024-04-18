@@ -66,10 +66,7 @@ export default function Chat({ navigation }) {
                 const userConversations = await axiosPrivate(
                     `/userConversations/${userId}`
                 );
-                console.log("user conversation");
-                console.log(
-                    userConversations?.conversations[0]?.lastMess.createdAt
-                );
+                // console.log("user conversation:", userConversations.conversations);
                 setData(userConversations.conversations);
             } catch (error) {
                 console.error("Error fetching user conversations:", error);
@@ -124,6 +121,7 @@ export default function Chat({ navigation }) {
     const renderItem = ({ item }) => {
 
         const isNew = item?.conversationId === chatReceived?.conversationId;
+        // console.log("item:", item);
         return (
             <TouchableOpacity
                 style={styles.viewOfFlatlist}
@@ -160,9 +158,9 @@ export default function Chat({ navigation }) {
                     <Text style={{ fontSize: 16, color: "grey" }}>
                         {/* {(isNew && chatReceived?.content?.text) || item?.lastMess.content?.text} */}
                         {
-                            ((isNew && chatReceived?.content?.text) || item?.lastMess.content?.text)?.length > 44 ?
-                                (((isNew && chatReceived?.content?.text) || item?.lastMess.content?.text)?.substring(0, 44) + '...') :
-                                ((isNew && chatReceived?.content?.text) || item?.lastMess.content?.text)
+                            ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.length > 44 ?
+                                (((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.substring(0, 44) + '...') :
+                                ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)
                         }
                     </Text>
                 </View>
@@ -176,7 +174,7 @@ export default function Chat({ navigation }) {
                     }}
                 >
                     <Text style={{ color: "grey", fontSize: 14 }}>
-                        {formatTimeSendMessage((isNew && chatReceived?.createdAt) || item?.lastMess.createdAt)}
+                        {formatTimeSendMessage((isNew && chatReceived?.createdAt) || item?.lastMess?.createdAt)}
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -186,7 +184,7 @@ export default function Chat({ navigation }) {
     return (
         <View style={styles.container}>
             {/* ============================================ renderHeader */}
-            <View style={{ width: '100%', height: '8%', flexDirection: 'row', backgroundColor: 'blue' }}>
+            <View style={{ width: '100%', height: '8%', flexDirection: 'row', backgroundColor: '#009CF9' }}>
                 <TouchableOpacity
                     style={{ width: '75%', height: '100%', flexDirection: 'row' }}
                     onPress={() => {

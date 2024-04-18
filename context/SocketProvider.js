@@ -4,8 +4,7 @@ import { useCurrentUser } from "../App";
 export const SocketContext = createContext();
 
 const SocketProvider = ({children}) => {
-    // const socket = io('https://tamhiep.zola-api.tech', {transports: ['websocket']}); 
-    const socket = io('http://192.168.21.250:8900', {transports: ['websocket']});
+    const socket = io('https://tamhiep.zola-api.tech', {transports: ['websocket']}); 
     const [socketValue, setSocketValue] = useState(socket);
     const currentUser =  useCurrentUser().user;
     useEffect(() => {
