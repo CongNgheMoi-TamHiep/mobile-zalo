@@ -43,8 +43,7 @@ export default function Conversations({ route, navigation }) {
     // thong tin user tim kiem
     const searchUser = route.params?.searchUser;
     const conversationInfo = route.params?.conversationInfo;
-    console.log('conversationInfo:');
-    console.log(conversationInfo);
+    // console.log('conversationInfo:', conversationInfo);
     // kiểm tra xem người  dùng có nhập chữ hay không
     const [isTyping, setIsTyping] = useState(false);
     // hiệu ứng dấu nháy trong phần tin nhắn
@@ -418,9 +417,12 @@ export default function Conversations({ route, navigation }) {
                     <SimpleLineIcons name="phone" size={24} color="white" />
                     <Ionicons name="videocam-outline" size={28} color="white" />
                     <TouchableOpacity
-                    onPress={() => navigation.navigate('OptionChat', { conversationInfo: conversationInfo })}
+                        onPress={() => navigation.navigate('OptionChat', {
+                            conversationInfo: conversationInfo,
+                            listMembers: conversationInfo?.members.filter(member => member._id !== currentUser.user.uid),
+                        })}
                     >
-                    <AntDesign name="bars" size={28} color="white" />
+                        <AntDesign name="bars" size={28} color="white" />
 
                     </TouchableOpacity>
                 </View>
@@ -988,6 +990,7 @@ export default function Conversations({ route, navigation }) {
                 renderInputToolbar={renderInputToolBar} // custom thanh bar của tin nhắn
                 // renderActions={renderAction} // chỉnh icon kế bên ô nhập tin nhắn
                 onLongPress={(context, message) => onMessageLongPress(context, message)}
+                showUserAvatar={true} // Hiện avatar của người gửi bên cạnh tin nhắn
             />
             {/* ================================================================= Modal khi xóa tin nhắn text */}
             <Modal
