@@ -29,8 +29,7 @@ export default function ViewMember({ navigation, route }) {
 
     }
 
-
-    useEffect(() => {
+    function getMember() {
         (async () => {
             try {
                 const response = await axiosPrivate.get(`/group/getMembers/${dataConversation.conversationId}`);
@@ -40,6 +39,9 @@ export default function ViewMember({ navigation, route }) {
                 console.error("Error fetching data:", error);
             }
         })();
+    }
+    useEffect(() => {
+        getMember()
     }, []);
 
     const handleTranferDeputyGroup = async () => {
@@ -84,7 +86,18 @@ export default function ViewMember({ navigation, route }) {
             </View>
         </TouchableOpacity>
     )
-
+  async function XoaThanhVien(id){
+        try{
+            await axiosPrivate.delete(`/group/removeMember/${dataConversation.conversationId}`,{
+                params:{ userId:id}
+            })
+            setModalVisible(false);
+            getMember()
+           
+        }catch(error){
+            console.log('Error xóa thàng viên:',error)
+        }
+    }
     return (
         <View style={styles.container}>
             <View style={{ width: '100%', height: '7%', backgroundColor: '#0A95FC', flexDirection: 'row' }}>
@@ -208,6 +221,9 @@ export default function ViewMember({ navigation, route }) {
                                         </Text>
                                     </TouchableOpacity>
                                     <TouchableOpacity
+                                    onPress={()=>{
+                                        XoaThanhVien(selectedUser._id)
+                                    }}
                                         style={{ marginTop: 5 }}
                                     >
                                         <Text style={{ fontSize: 18, fontWeight: '500', color: 'red' }}>

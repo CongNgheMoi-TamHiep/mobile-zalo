@@ -276,9 +276,10 @@ const ShowModelProvider = ({ children }) => {
   }
   // function từ chối cuoc goi
   function TuChoiCall(channel) {
+    stopSound()
     socket.emit("end-call", { channel });
     setshowReviverCall(false);
-    stopSound()
+   
   }
   // modal call video
   const [showVideoCallModelState, setVideoCallModelState] = useState(false);
