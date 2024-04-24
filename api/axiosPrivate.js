@@ -3,8 +3,8 @@ import axiosRetry from "axios-retry";
 import {REACT_APP_API_URL} from "@env"
 import {auth} from '../config/firebase';
 import queryString from 'query-string';
-// const BASE_URL = REACT_APP_API_URL || "http://localhost:5500/api";
-const BASE_URL = "http://192.168.30.250:5500/api";
+const BASE_URL = REACT_APP_API_URL || "http://localhost:5500/api";
+// const BASE_URL = "http://192.168.30.250:5500/api";
 const axiosPrivate = axios.create({
     baseURL: BASE_URL,
     headers: { "Content-Type": "application/json" },

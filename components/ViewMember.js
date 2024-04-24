@@ -11,6 +11,7 @@ export default function ViewMember({ navigation, route }) {
     const currentUser = useCurrentUser();
     // data conversation
     const dataConversation = route.params?.dataConversation;
+    console.log("object data conversation: ", dataConversation)
     // id của trưởng nhóm
     const adminId = dataConversation.adminId;
     // danh sách thành viên
@@ -32,7 +33,7 @@ export default function ViewMember({ navigation, route }) {
     function getMember() {
         (async () => {
             try {
-                const response = await axiosPrivate.get(`/group/getMembers/${dataConversation.conversationId}`);
+                const response = await axiosPrivate.get(`/group/getMembers/${dataConversation._id}`);
                 // console.log('response:', response);
                 setListMember(response);
             } catch (error) {
@@ -46,11 +47,10 @@ export default function ViewMember({ navigation, route }) {
 
     const handleTranferDeputyGroup = async () => {
         try {
-            const res = await axiosPrivate.patch(`/group/addDeputy/${dataConversation.conversationId}`, {
+            const res = await axiosPrivate.patch(`/group/addDeputy/${dataConversation._id}`, {
                 userId: selectedUser._id
             });
-            console.log("res", res);
-            navigation.navigate('Conversations');
+            getMember()
             setIsVisibleGrantDeputyGroup(false);
         } catch (error) {
             console.error('Error tranfer role deputy:', error);
@@ -88,7 +88,7 @@ export default function ViewMember({ navigation, route }) {
     )
   async function XoaThanhVien(id){
         try{
-            await axiosPrivate.delete(`/group/removeMember/${dataConversation.conversationId}`,{
+            await axiosPrivate.delete(`/group/removeMember/${dataConversation._id}`,{
                 params:{ userId:id}
             })
             setModalVisible(false);

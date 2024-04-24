@@ -39,9 +39,6 @@ const OptionChat = ({ route }) => {
   const currentUser = useCurrentUser();
   const [selectedUser, setSelectedUser] = useState(null);
 
-  const listMembers = route.params?.listMembers;
-  // console.log('listMembers:', listMembers);
-
 
   const [isVisibleModalOfMember, setIsVisibleModalOfMember] = useState(false);
   const [isVisibleModalOfAdmin, setIsVisibleModalOfAdmin] = useState(false);
@@ -56,12 +53,15 @@ const OptionChat = ({ route }) => {
   const toggleConfirmModalOfAdmin = () => {
     setIsConfirmModalOfAdmin(!isConfirmModalOfAdmin);
   }
-  const fetchData = () => {
-
-    setDataConversation(route.params?.conversationInfo);
+  const [listMembers, setListMembers] = useState([]);
+  const fetchData = async() => {
+    const response = await axiosPrivate.get(`/group/${route.params?.conversationInfo.conversationId}`);
+    setDataConversation(response);
+    const a = response.members.filter((item) => item._id != currentUser.user.uid);
+    setListMembers(a);
     if (route.params.conversationInfo.type === "group") {
       setIsGroup(true);
-      if (route.params.conversationInfo.adminId == currentUser.user.uid) {
+      if (response.adminId == currentUser.user.uid) {
         setIsLeader(true);
         // console.log("ádfassssssss", route.params.conversationInfo);
       }
@@ -108,7 +108,7 @@ const OptionChat = ({ route }) => {
   async function GiaiTanNhom() {
     try {
       const response = await axiosPrivate.delete(
-        `/group/dissolution/${dataConversation.conversationId}`
+        `/group/dissolution/${dataConversation._id}`
       );
       navigation.navigate("Messages");
     } catch (error) {
@@ -119,7 +119,7 @@ const OptionChat = ({ route }) => {
   // thành viên khi rời khỏi nhóm
   const handleMemberLeaveGroup = async () => {
     try {
-      const response = await axiosPrivate.patch(`/group/outGroup/${dataConversation.conversationId}`);
+      const response = await axiosPrivate.patch(`/group/outGroup/${dataConversation._id}`);
       console.log("response leave group:", response);
       navigation.navigate("Messages");
     } catch (error) {
@@ -131,11 +131,11 @@ const OptionChat = ({ route }) => {
   const handleAdminleaveGroup = async () => {
     try {
       // chuyển quyền trước khi out
-      await axiosPrivate.patch(`/group/transferAdmin/${dataConversation.conversationId}`, {
+      await axiosPrivate.patch(`/group/transferAdmin/${dataConversation._id}`, {
         userId: selectedUser._id
       });
       // sau khi chuyển quyền thì mới out
-      await axiosPrivate.patch(`/group/outGroup/${dataConversation.conversationId}`);
+      await axiosPrivate.patch(`/group/outGroup/${dataConversation._id}`);
 
       navigation.navigate("Messages");
     } catch (error) {

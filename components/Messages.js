@@ -14,8 +14,11 @@ import axiosPrivate from "../api/axiosPrivate";
 import { auth } from "../config/firebase";
 import { useSocket } from "../context/SocketProvider";
 import { set } from "date-fns";
+import { useNavigation } from '@react-navigation/native'
 
-export default function Chat({ navigation }) {
+export default function Chat({  }) {
+
+    const navigation = useNavigation();
 
     // width and height of device
     const { widthOfDevice, heightOfDevice } = Dimensions.get("window");
@@ -33,6 +36,26 @@ export default function Chat({ navigation }) {
     const { socket } = useSocket();
     const [chatReceived, setChatReceived] = useState(null);
     const [newConversation, setNewConversation] = useState(null);
+
+    const fetchData = async () => {
+        try {
+            const userId = auth.currentUser.uid;
+            const userConversations = await axiosPrivate(
+                `/userConversations/${userId}`
+            );
+            // console.log("user conversation:", userConversations.conversations);
+            let data = userConversations.conversations;
+            data = data?.sort((a, b) => {
+                return new Date(b.lastMess.createdAt) - new Date(a.lastMess.createdAt);
+            });
+            setData(data);
+        } catch (error) {
+            console.error("Error fetching user conversations:", error);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     useEffect(() => {
         socket.on("getMessage", (chat) => {
             setChatReceived(chat);
@@ -43,10 +66,20 @@ export default function Chat({ navigation }) {
             setNewConversation(conversation);
         })
         socket.on("deleteConversation", (conversationId) => {
-            console.log("delete socket: ", conversationId);
+            // console.log("delete socket: ", conversationId);
+            //     return [...prevData.filter((item) => item.conversationId !== conversationId)]
+            // })
+            console.log("delele user"); 
             setData((prevData) => {
-                return [...prevData.filter((item) => item.conversationId !== conversationId)]
+                return [...prevData.map((item) => {
+                    if (item.conversationId === conversationId) {
+                        return { ...item, deleted: true, state: "deleted"}
+                    }
+                    return item;
+                })]
             })
+            socket.emit("leaveRoom", conversationId);
+            fetchData();
         })
     });
 
@@ -60,29 +93,25 @@ export default function Chat({ navigation }) {
     }, [newConversation]);
 
     useEffect(() => {
-        (async () => {
-            try {
-                const userId = auth.currentUser.uid;
-                const userConversations = await axiosPrivate(
-                    `/userConversations/${userId}`
-                );
-                // console.log("user conversation:", userConversations.conversations);
-                setData(userConversations.conversations);
-            } catch (error) {
-                console.error("Error fetching user conversations:", error);
-            } finally {
-                setLoading(false);
-            }
-        })();
+        fetchData();
     }, []);
+    
+    useEffect(() => {
+        const unsubcribe = navigation.addListener("focus", () => {
+            fetchData();
+          })
+          return unsubcribe;
+    }, [navigation]);
 
     useEffect(() => {
         if(data?.length > 0) { 
             data.map((item) => {
-                socket.emit("joinRoom", item.conversationId);
+                if(item.conversationId&&item.state!== "deleted" && item.deleted!=true)
+
+                    socket.emit("joinRoom", item.conversationId);
             })
         }
-    }, [data])
+    }, [])
 
     if (loading) {
         // Hiển thị loading indicator hoặc bất kỳ nội dung đang chờ nào bạn muốn
@@ -119,15 +148,20 @@ export default function Chat({ navigation }) {
     };
     // render lên màn hình các đoạn chat của user
     const renderItem = ({ item }) => {
+        // console.log('item:', item);
 
         const isNew = item?.conversationId === chatReceived?.conversationId;
-        // console.log("item:", item);
         return (
             <TouchableOpacity
                 style={styles.viewOfFlatlist}
                 onPress={() => {
+                    console.log("item: ")
+                    console.log(item)
                     navigation.navigate("Conversations", {
-                        conversationInfo: item,
+                        conversationInfo: {
+                            ...item, 
+                            ...(item._id && {conversationId: item._id})
+                        },
                     });
                 }}
             >

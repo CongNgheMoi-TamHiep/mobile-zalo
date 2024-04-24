@@ -42,7 +42,7 @@ export default function ViewMember({ navigation, route }) {
     const handleAddMembers = async () => {
         try {
             for (const id of selectedIds) {
-                const res = await axiosPrivate.post(`/group/addMember/${dataConversation.conversationId}`, {
+                const res = await axiosPrivate.post(`/group/addMember/${dataConversation._id}`, {
                     userId: id
                 });
                 navigation.navigate('Conversations');

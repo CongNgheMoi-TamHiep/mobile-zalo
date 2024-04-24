@@ -64,6 +64,9 @@ const ShowModelProvider = ({ children }) => {
       //   console.log("end call",data)
       //  setDataReviverCall(null);
       setVideoCallModelState(false);
+      stopSound()
+      setshowReviverCall(false);
+    
     });
   }, [socket.id]);
 
@@ -82,11 +85,13 @@ const ShowModelProvider = ({ children }) => {
       }, 4000);
     }
     if (dataReviverCall) {
+
       setshowReviverCall(true);
       setTimeout(async () => {
         setshowReviverCall(false);
+        socket.emit("decline-call", { channel });
         stopSound()
-      }, 15000);
+      }, 10000);
     }
   }, [dataFriendRequest, dataAccepted, dataReviverCall]);
 

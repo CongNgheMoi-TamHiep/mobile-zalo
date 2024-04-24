@@ -42,7 +42,7 @@ export default function TranferAdmin({ navigation, route }) {
 
     const handleTranferAdmin = async () => {
         try {
-            const res = await axiosPrivate.patch(`/group/transferAdmin/${dataConversation.conversationId}`, {
+            const res = await axiosPrivate.patch(`/group/transferAdmin/${dataConversation._id}`, {
                 userId: selectedUser._id
             });
             console.log("res",res);
