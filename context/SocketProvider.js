@@ -10,6 +10,8 @@ const SocketProvider = ({children}) => {
     useEffect(() => {
         socket.on('connect', () => {
             setSocketValue(socket);
+            console.log("socket.id:");
+            console.log(socket.id);
         })
         if(currentUser?.uid)
             socket.emit('addUser', currentUser?.uid);

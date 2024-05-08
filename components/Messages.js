@@ -52,7 +52,7 @@ export default function Chat({ navigation }) {
 
     useEffect(() => {
         if (newConversation) {
-         
+
             setData((prevData) => {
                 return [newConversation, ...prevData];
             });
@@ -77,7 +77,7 @@ export default function Chat({ navigation }) {
     }, []);
 
     useEffect(() => {
-        if(data?.length > 0) { 
+        if (data?.length > 0) {
             data.map((item) => {
                 socket.emit("joinRoom", item.conversationId);
             })
@@ -158,9 +158,12 @@ export default function Chat({ navigation }) {
                     <Text style={{ fontSize: 16, color: "grey" }}>
                         {/* {(isNew && chatReceived?.content?.text) || item?.lastMess.content?.text} */}
                         {
-                            ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.length > 44 ?
-                                (((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.substring(0, 44) + '...') :
-                                ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)
+                            item?.lastMess?.content?.image ? ("[Hình ảnh]") : (item?.lastMess?.content?.video ? "[Video]" : item?.lastMess?.content?.text ?
+                                ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.length > 44 ?
+                                    (((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.substring(0, 44) + '...') :
+                                    ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)
+                                : "[File]")
+
                         }
                     </Text>
                 </View>
@@ -233,7 +236,7 @@ export default function Chat({ navigation }) {
                     }}
                     data={data}
                     renderItem={renderItem}
-                    keyExtractor={(item) => item?.conversationId}
+                    keyExtractor={(item) => item?.conversationId.toString()}
                 />
             </View>
             {/* ============================================ render modal create group */}
