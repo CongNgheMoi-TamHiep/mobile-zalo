@@ -41,22 +41,20 @@ import AgoraUIKit from "agora-rn-uikit";
 import * as DocumentPicker from "expo-document-picker";
 
 export default function Conversations({ route, navigation }) {
+
   // width và height của thiết bị
   const { widthOfDevice, heightOfDevice } = Dimensions.get("window");
 
   // dữ liệu giả
   const [messages, setMessages] = useState([]);
 
-  const [isModalErrorFileSizeVisible, setIsModalErrorFileSizeVisible] =
-    useState(false);
+  const [isModalErrorFileSizeVisible, setIsModalErrorFileSizeVisible] = useState(false);
+
+  // modal hiển thị khi có sự kiện onLongPress vào tin nhắn
   const [isModalVisible, setModalVisible] = useState(false);
-  const [isModalImageVisible, setModalImageVisible] = useState(false);
-  const [isModalVideoVisible, setModalVideoVisible] = useState(false);
+  // modal xác nhận xóa tin nhắn
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
-  const [isConfirmModalImageVisible, setIsConfirmModalImageVisible] =
-    useState(false);
-  const [isConfirmModalVideoVisible, setIsConfirmModalVideoVisible] =
-    useState(false);
+
 
   // theo dõi vị trí của tin nhắn, hình ảnh, video cần hiện modal
   const [messageLength, setMessageLength] = useState(0);
@@ -93,8 +91,6 @@ export default function Conversations({ route, navigation }) {
   useEffect(() => {
     socket.on("getMessage", (chat) => {
       setChatReceived(chat);
-      // console.log("chat sockett");
-      // console.log(chat);
     });
     socket.on("deleteMessage", (chatId) => {
       setDeletedChatId(chatId);
@@ -142,9 +138,18 @@ export default function Conversations({ route, navigation }) {
           name: chatReceived.senderInfo.name,
           avatar: chatReceived.senderInfo.avatar,
         },
+        sent: true,
       };
-      setMessages((previousMessages) =>
-        GiftedChat.append(previousMessages, newMessage)
+      console.log("newMessage:");
+      console.log(newMessage);
+      setMessages((previousMessages) => {
+        if (newMessage.user._id !== currentUser.user.uid)
+          return GiftedChat.append(previousMessages, newMessage);
+        return GiftedChat.append(
+          previousMessages.filter((mess) => mess.pending !== true),
+          newMessage
+        )
+      }
       );
     }
   }, [chatReceived]);
@@ -177,7 +182,7 @@ export default function Conversations({ route, navigation }) {
               name: message.senderInfo.name,
               avatar: message.senderInfo.avatar,
             },
-            sent: true
+            sent: true,
           };
         });
         setMessages(formattedMessages.reverse());
@@ -253,8 +258,6 @@ export default function Conversations({ route, navigation }) {
       );
       console.log("Tin nhắn đã được xóa: ", response);
       setIsConfirmModalVisible(false);
-      setIsConfirmModalImageVisible(false);
-      setIsConfirmModalVideoVisible(false);
 
       setMessages(
         messages.filter((message) => message._id !== selectedMessage._id)
@@ -274,8 +277,6 @@ export default function Conversations({ route, navigation }) {
       );
       console.log("Tin nhắn đã thu hồi: ", response);
       setModalVisible(false);
-      setModalImageVisible(false);
-      setModalVideoVisible(false);
     } catch (error) {
       console.error("Lỗi khi thu hồi tin nhắn:", error);
     }
@@ -312,25 +313,54 @@ export default function Conversations({ route, navigation }) {
     setIsConfirmModalVisible(!isConfirmModalVisible);
   };
 
-  // modal unsend image
-  const toggleUnsendImage = () => {
-    setModalImageVisible(!isModalImageVisible);
-  };
-  // modal confirm unsend image
-  const toggleConfirmUnsendImage = () => {
-    setIsConfirmModalImageVisible(!isConfirmModalImageVisible);
-  };
 
-  // modal unsend video
-  const toggleUnsendVideo = () => {
-    setModalVideoVisible(!isModalVideoVisible);
-  };
-  // modal confirm unsend video
-  const toggleConfirmUnsendVideo = () => {
-    setIsConfirmModalVideoVisible(!isConfirmModalVideoVisible);
-  };
+  // Xu li onLongPress tin nhắn text
 
-  // xử lí gửi ảnh
+  const onMessageLongPress = (context, message) => {
+    // console.log("on long press Message: ", message);
+    setSelectedMessage(message);
+    setMessageLength(message.text.length);
+    setModalVisible(true);
+  };
+  // custom header
+
+
+  // xử lí khi gửi dữ liệu 
+  // send text
+  const onSend = async (newMessages = []) => {
+    console.log("newMessages onSend: ", newMessages);
+    setMessages(previousMessages => GiftedChat.append(previousMessages, {
+      ...newMessages[0],
+      pending: true,
+    }));
+    const { text } = { ...newMessages[0] };
+
+    // trường hợp chọn vào userConversation
+    if (text) {
+      let conversationId = conversationInfo?.conversationId;
+      if (conversationId) {
+        // do nothing for now
+        const chat = await axiosPrivate.post(`/chat`, {
+          conversationId,
+          senderId: currentUser.user.uid,
+          content: { text },
+        });
+        console.log("chat: ");
+        console.log(chat);
+      } else if (searchUser?._id) {
+        const chat = await axiosPrivate.post(`/chat`, {
+          receiverId: searchUser._id,
+          senderId: currentUser.user.uid,
+          content: { text },
+        });
+        console.log("chat: ");
+        console.log(chat);
+      } else {
+        console.log("bug!!!!");
+      }
+    }
+  };
+  // send video, image,
   const onSendMedia = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.All,
@@ -342,7 +372,7 @@ export default function Conversations({ route, navigation }) {
 
     console.log("ImagePicker result:", result);
 
-    if (result.cancelled) {
+    if (result.canceled) {
       return;
     }
 
@@ -412,27 +442,30 @@ export default function Conversations({ route, navigation }) {
     }
 
     // Xử lí chọn media và gửi ở gifted chat
-    // const selectedMedia = result.assets.map((item, index) => {
-    //     const mediaType = item.type ? item.type.toLowerCase() : '';
+    const selectedMedia = result.assets.map((item, index) => {
+      const mediaType = item.type ? item.type.toLowerCase() : '';
 
-    //     return {
-    //         _id: messages.length + index + 1,
-    //         type: mediaType, // Đảm bảo type là "video" khi gửi video
-    //         [mediaType]: item.uri,
-    //         createdAt: new Date(),
-    //         user: {
-    //             _id: currentUser.user.uid,
-    //         },
-    //     };
-    // });
+      return {
+        _id: messages.length + index + 1,
+        type: mediaType, // Đảm bảo type là "video" khi gửi video
+        [mediaType]: item.uri,
+        createdAt: new Date(),
+        user: {
+          _id: currentUser.user.uid,
+        },
+      };
+    });
 
     // console.log("Selected media:", selectedMedia);
-    // onSend(selectedMedia);
+    onSend(selectedMedia);
   };
+
   // Gui tai lieu
   const pickDocument = async () => {
     try {
       const document = await DocumentPicker.getDocumentAsync();
+
+      console.log("document: ", document.assets[0]);
 
       const formData = new FormData();
       formData.append("file", {
@@ -459,6 +492,8 @@ export default function Conversations({ route, navigation }) {
           })
           .then((res) => { })
           .catch((err) => {
+            console.log("loi lon j z");
+            console.log(err);
             setIsModalErrorFileSizeVisible(true);
           });
         console.log("up file thanh cong!");
@@ -466,318 +501,195 @@ export default function Conversations({ route, navigation }) {
 
       const newMessage = {
         _id: Math.random().toString(),
-        name: document.assets[0].name, // ID duy nhất
-        type: document.assets[0].mimeType, // Đường dẫn của tập tin được chọn
-        file: document.assets[0].uri,
-        size: document.assets[0].size,
-        createdAt: new Date(), // Thời gian gửi tin nhắn
+        type: document.assets[0].mimeType,
+        file: {
+          name: document.assets[0].name,
+          url: document.assets[0].uri,
+          size: document.assets[0].size,
+        },
+        createdAt: new Date(),
         user: {
           _id: currentUser.user.uid,
-        }, // Người gửi tin nhắn
+        },
       };
 
       // setMessages(previousMessages => GiftedChat.append(previousMessages, newMessage));
-      // onSend([newMessage]);
+      onSend([newMessage]);
     } catch (error) {
       console.error("Error picking document:", error);
     }
   };
-  // Xu li onLongPress tin nhắn text
 
-  const onMessageLongPress = (context, message) => {
-    console.log("on long press Message: ", message);
-    setSelectedMessage(message);
-    setMessageLength(message.text.length);
-    setModalVisible(true);
-  };
-  // custom header
- 
 
-  // xử lí khi gửi dữ liệu
-  const onSend = async (newMessages = []) => {
-    const updatedMessages = newMessages.map((message) => {
-      const { type, image, video, file, ...rest } = message;
-
-      // Kiểm tra kiểu phương tiện và xử lý dữ liệu tương ứng
-      if (type === "image") {
-        return {
-          ...rest,
-          image,
-        };
-      } else if (type === "video") {
-        return {
-          ...rest,
-          video,
-        };
-      } else if (type === "application/pdf") {
-        return {
-          ...rest,
-          document: file,
-          type: "document",
-        };
-      }
-
-      // Xử lý các trường hợp khác (nếu có)
-      return message;
-    });
-
-    console.log("updatedMessages: ", updatedMessages);
-
-    // setMessages(previousMessages => GiftedChat.append(previousMessages, updatedMessages));
-
-    const { text } = { ...updatedMessages[0] };
-
-    // trường hợp chọn vào userConversation
-    let conversationId = conversationInfo?.conversationId;
-    if (conversationId) {
-      // do nothing for now
-      const chat = await axiosPrivate.post(`/chat`, {
-        conversationId,
-        senderId: currentUser.user.uid,
-        content: {
-          ...(text && { text }),
-        },
-      });
-      console.log("chat: ");
-      console.log(chat);
-    } else if (searchUser?._id) {
-      const chat = await axiosPrivate.post(`/chat`, {
-        receiverId: searchUser._id,
-        senderId: currentUser.user.uid,
-        content: { text },
-      });
-      console.log("chat: ");
-      console.log(chat);
-    } else {
-      console.log("bug!!!!");
-    }
-  };
-  // Hàm render tin nhắn tùy chỉnh
-  const renderCustomMessage = (props) => {
-    const { file, type, images } = props.currentMessage;
+  // custom bóng chat
+  const renderBubble = (props) => {
+    const { file, type, images, image, text, video } = props.currentMessage;
     // console.log("images: ", images);
-    const files = ["application/pdf", "application/msword"];
     // console.log("props of custom render mesage: ", props.currentMessage);
     const isCurrentUser = props.currentMessage.user._id === currentUser.user.uid;
     const fileTypeDocument = mime.getType(file?.url);
 
-    // Kiểm tra tin nhắn là mảng hình ảnh
-    if (
-      (images && Array.isArray(images) && images.length > 0) ||
-      fileTypeDocument === "image/jpeg" ||
-      fileTypeDocument === "image/png"
-    ) {
-      let images1 = images;
+
+    if (images?.length > 0) {
       return (
-        <View
-          style={{
-            width: 250,
-            height: 280,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            borderWidth: 1,
-            marginBottom: 5,
-            borderRadius: 10,
-            marginLeft: isCurrentUser ? "30%" : "2%",
+        <Bubble
+          {...props}
+          wrapperStyle={{
+            right: {
+              padding: 5,
+              marginTop: 10,
+              backgroundColor: '#52A0FF',
+              borderColor: '#767A7F',
+              borderWidth: 1,
+            },
+            left: {
+              padding: 5,
+              marginTop: 10,
+              backgroundColor: '#fff',
+              borderColor: '#767A7F',
+              borderWidth: 1,
+            },
           }}
-        >
-          {images1.map((img, index) => (
-            <TouchableOpacity
-              key={index}
-              style={{
-                width: 100,
-                height: 100,
-                margin: 5,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            // onLongPress={() => {
-            //     console.log('message: ', img);
-            //     setSelectedMessage(img);
-            //     setModalImageVisible(true);
-            // }}
-            >
-              <Image
-                source={{ uri: img.url }}
-                style={{ width: "95%", height: "95%", borderRadius: 10 }}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      );
+          renderCustomView={() => {
+            let imgs = images;
+            if (imgs?.length > 0) {
+              const maxWidth = imgs.length % 2 === 0 ? 200 : 300;
+              return (
+                <TouchableOpacity
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    maxWidth,
+                    // height: 280,
+                    // marginLeft: '2.5%',
+                    // justifyContent: "center",
+                    // marginBottom: 5,
+                    // marginTop: 5,
+                    // borderRadius: 10,
+                    // backgroundColor: 'transparent',
+                  }}
+                  onLongPress={() => {
+                    console.log('mang anh:', imgs);
+                  }}
+                >
+                  {imgs.map((img, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      style={{
+                        width: 100,
+                        height: 100,
+                        // margin: 5,
+                        // justifyContent: "center",
+                        // alignItems: "center",
+                      }}
+                    >
+                      <Image
+                        source={{ uri: img.url }}
+                        style={{ width: "95%", height: "95%", borderRadius: 10 }}
+                        resizeMode="cover"
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </TouchableOpacity>
+              )
+            }
+          }}
+        />
+      )
     }
 
-    // Kiểm tra nếu là tin nhắn document (PDF)
-    if (file?.url) {
-      // console.log("fileTypeDocument: ", fileTypeDocument);
-      const icons = {
-        "application/pdf": require("../assets/pdf-icon.png"),
-        "application/msword": require("../assets/word-icon.png"),
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": require("../assets/word-icon.png"),
-        "application/vnd.ms-powerpoint": require("../assets/ppt-icon.png"),
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation": require("../assets/ppt-icon.png"),
-        "application/vnd.rar": require("../assets/rar-icon.png"),
-        "application/zip": require("../assets/rar-icon.png"),
-        "text/csv": require("../assets/csv-icon.png"),
-      };
-      return (
-        <TouchableOpacity
-          onLongPress={() => {
-            setSelectedMessage(props.currentMessage);
-            setModalVisible(true);
-          }}
-          onPress={() => Linking.openURL(file.url)}
-          style={{
-            width: "70%",
-            height: 60,
-            marginBottom: 5,
-            marginLeft: isCurrentUser ? "27%" : "2%",
-            backgroundColor: "grey",
-            borderRadius: 10,
-            justifyContent: "center",
-          }}
-        >
-          <View style={{ width: "100%", height: "100%", flexDirection: "row" }}>
-            <View
-              style={{
-                width: "30%",
-                height: "100%",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Image
-                source={
-                  icons[fileTypeDocument] || require("../assets/pdf-icon.png")
-                }
-                style={{ width: 40, height: 40 }}
-              />
-            </View>
-            <View
-              style={{ width: "70%", height: "100%", justifyContent: "center" }}
-            >
-              <Text
-                style={{ color: "#FFF", fontSize: 16, fontWeight: "500" }}
-                numberOfLines={2}
-              >
-                {file.name} File -{file.size} kb
-              </Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-
-    // Nếu không phải loại tin nhắn tùy chỉnh, sử dụng Bubble mặc định
-    // console.log("type: ");
-    // console.log(type);
-
-    const bgrColor = {
-      deleted: "#B9BDC1",
-      notify: "#ff8fab",
-    };
     return (
       <Bubble
         {...props}
         wrapperStyle={{
           right: {
-            // Thêm margin cho các text bên phải
-            marginBottom: 5,
-            backgroundColor: bgrColor[type] || "#0084FF",
-            marginRight: 14,
+            padding: 5,
+            backgroundColor: type === "deleted" ? "#B9BDC1" : '#0084FF',
           },
           left: {
-            // Thêm margin cho các text bên trái
-            marginLeft: 8,
-            marginBottom: 5,
-            backgroundColor: bgrColor[type] || "#fff",
+            padding: 5,
+            backgroundColor: type === "deleted" ? "#B9BDC1" : 'white',
           },
         }}
-        textStyle={{
-          right: {
-            color: type === "deleted" ? "#000" : "#fff",
-          },
-          left: {
-            color: "#000",
-          },
-        }}
-      />
-    );
-  };
-  const renderBubble = (props) => {
-    const { file, type, images, image, text, video } = props.currentMessage;
-    // console.log("images: ", images);
-    const files = ["application/pdf", "application/msword"];
-    // console.log("props of custom render mesage: ", props.currentMessage);
-    const isCurrentUser = props.currentMessage.user._id === currentUser.user.uid;
-    const fileTypeDocument = mime.getType(file?.url);
 
-    // Tin nhắn text
-    if (text) {
-      return (
-        <Bubble {...props} style={{ marginLeft: '5%', justifyContent: 'center', borderTopLeftRadius: isCurrentUser ? 20 : 0, borderTopRightRadius: isCurrentUser ? 20 : 0, backgroundColor: isCurrentUser ? '#0084FF' : 'white' }}>
-          {isCurrentUser ? (
-            <Text style={{ color: type === "deleted" ? "#000" : "#fff" }}>
+        renderMessageText={() => (
+          <View style={{ paddingHorizontal: 10 }}>
+            {text && <Text style={{ color: type === "deleted" ? "#000" : (isCurrentUser ? "#fff" : "#000") }}>
               {text}
-            </Text>
-          ) : (
-            <Text style={{ color: type === "deleted" ? "#000" : "#000" }}>
-              {text}
-            </Text>
-          )}
-        </Bubble>
-      )
-    }
-    // Tin nhắn video
-    if (video) {
-      return (
-        <Bubble
-          {...props}
-          style={{
-            width: 300,
-            height: 300,
-            overflow: "hidden",
-            flexDirection: "row",
-          }}
-        >
-          {props.currentMessage.user._id == currentUser.user.uid ? (
-            <View style={{ width: '100%', height: 300 }}>
+            </Text>}
+          </View>
+        )}
+        renderMessageVideo={() => (
+          <View
+            style={{
+              width: 300,
+              height: 300,
+              overflow: "hidden",
+              flexDirection: "row",
+            }}
+          >
+            {props.currentMessage.user._id == currentUser.user.uid ? (
+              <View style={{ width: '100%', height: 300 }}>
+                <View
+                  style={{
+                    width: 300,
+                    height: 300,
+                    marginTop: '1%',
+                    overflow: "hidden",
+                    flexDirection: "row",
+                    marginLeft: "3%",
+                  }}
+                >
+                  <TouchableOpacity
+                    style={{
+                      width: 30,
+                      height: "100%",
+                      justifyContent: "center",
+                    }}
+                    onPress={() => {
+                      setSelectedMessage(props.currentMessage);
+                      setModalVisible(true);
+                    }}
+                  >
+                    <Entypo
+                      name="dots-three-horizontal"
+                      size={24}
+                      color="black"
+                    />
+                  </TouchableOpacity>
+                  <Video
+                    ref={videoRef}
+                    source={{ uri: video ? video : file?.url }}
+                    style={{
+                      width: 250,
+                      height: 290,
+                      backgroundColor: "#000",
+                      borderRadius: 20,
+                      paddingTop: 5,
+                      paddingBottom: 5,
+                    }}
+                    resizeMode="cover"
+                    useNativeControls
+                    isLooping
+                  />
+                </View>
+              </View>
+            ) : (
               <View
                 style={{
                   width: 300,
                   height: 300,
-                  marginTop: '1%',
                   overflow: "hidden",
                   flexDirection: "row",
-                  marginLeft: "3%",
+                  marginLeft: "2%",
                 }}
               >
-                <TouchableOpacity
-                  style={{
-                    width: 30,
-                    height: "100%",
-                    justifyContent: "center",
-                  }}
-                  onPress={() => {
-                    console.log("selectedMessage: ", props.currentMessage);
-                    setSelectedMessage(props.currentMessage);
-                    setModalVideoVisible(true);
-                  }}
-                >
-                  <Entypo
-                    name="dots-three-horizontal"
-                    size={24}
-                    color="black"
-                  />
-                </TouchableOpacity>
                 <Video
                   ref={videoRef}
                   source={{ uri: video ? video : file?.url }}
                   style={{
                     width: 250,
-                    height: 290,
+                    height: 280,
                     backgroundColor: "#000",
                     borderRadius: 20,
                     paddingTop: 5,
@@ -787,249 +699,110 @@ export default function Conversations({ route, navigation }) {
                   useNativeControls
                   isLooping
                 />
+                <TouchableOpacity
+                  style={{ width: 30, height: "100%", justifyContent: "center" }}
+                  onPress={() => {
+                    setSelectedMessage(props.currentMessage);
+                    setModalVisible(true);
+                  }}
+                >
+                  <Entypo name="dots-three-horizontal" size={24} color="black" />
+                </TouchableOpacity>
               </View>
-            </View>
-          ) : (
-            <View
-              style={{
-                width: 300,
-                height: 300,
-                overflow: "hidden",
-                flexDirection: "row",
-                marginLeft: "2%",
-              }}
-            >
-              <Video
-                ref={videoRef}
-                source={{ uri: video ? video : file?.url }}
-                style={{
-                  width: 250,
-                  height: 280,
-                  backgroundColor: "#000",
-                  borderRadius: 20,
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                }}
-                resizeMode="cover"
-                useNativeControls
-                isLooping
-              />
-              <TouchableOpacity
-                style={{ width: 30, height: "100%", justifyContent: "center" }}
-                onPress={() => {
-                  setSelectedMessage(props.currentMessage);
-                  setModalVideoVisible(true);
-                }}
-              >
-                <Entypo name="dots-three-horizontal" size={24} color="black" />
-              </TouchableOpacity>
-            </View>
-          )}
-        </Bubble>
-      );
-    }
-    // Tin nhắn hình ảnh
-    if (image) {
-      return (
-        <Bubble
-          {...props}
-          style={{
-            width: 300,
-            height: 300,
-            marginTop: '2.5%',
-          }}
-          renderMessageImage={() => (
-            <TouchableOpacity
+            )}
+          </View>
+        )}
+        renderMessageImage={() => (
+          <TouchableOpacity
+            style={{
+              width: 280,
+              height: 300,
+            }}
+            onLongPress={() => {
+              setSelectedMessage(props.currentMessage);
+              setModalVisible(true);
+            }}
+          >
+            <Image
+              source={{ uri: image }}
               style={{
                 width: 280,
-                height: 300,
+                height: "95%",
+                borderRadius: 20,
+                paddingTop: 5,
+                paddingBottom: 5,
               }}
-              onLongPress={() => {
-                setSelectedMessage(props.currentMessage);
-                setModalImageVisible(true);
-              }}
-            >
-              <Image
-                source={{ uri: image }}
-                style={{
-                  width: 280,
-                  height: "95%",
-                  borderRadius: 20,
-                  paddingTop: 5,
-                  paddingBottom: 5,
-                }}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          )}
-        />
-      );
-    }
-
-    // Tin nhắn mảng hình ảnh
-    if (
-      (images && Array.isArray(images) && images.length > 0) ||
-      fileTypeDocument === "image/jpeg" ||
-      fileTypeDocument === "image/png"
-    ) {
-      let images1 = images;
-      return (
-        <View
-          style={{
-            width: 250,
-            height: 280,
-            flexDirection: "row",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            borderWidth: 1,
-            marginBottom: 5,
-            borderRadius: 10,
-            marginLeft: isCurrentUser ? "30%" : "2%",
-          }}
-        >
-          {images1.map((img, index) => (
-            <TouchableOpacity
-              key={index}
-              style={{
-                width: 100,
-                height: 100,
-                margin: 5,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            // onLongPress={() => {
-            //     console.log('message: ', img);
-            //     setSelectedMessage(img);
-            //     setModalImageVisible(true);
-            // }}
-            >
-              <Image
-                source={{ uri: img.url }}
-                style={{ width: "95%", height: "95%", borderRadius: 10 }}
-                resizeMode="cover"
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      );
-    }
-    // Tin nhắn document (PDF,WORD,EXCEL,...)
-    if (file?.url) {
-      // console.log("fileTypeDocument: ", fileTypeDocument);
-      const icons = {
-        "application/pdf": require("../assets/pdf-icon.png"),
-        "application/msword": require("../assets/word-icon.png"),
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": require("../assets/word-icon.png"),
-        "application/vnd.ms-powerpoint": require("../assets/ppt-icon.png"),
-        "application/vnd.openxmlformats-officedocument.presentationml.presentation": require("../assets/ppt-icon.png"),
-        "application/vnd.rar": require("../assets/rar-icon.png"),
-        "application/zip": require("../assets/rar-icon.png"),
-        "text/csv": require("../assets/csv-icon.png"),
-      };
-      return (
-        <TouchableOpacity
-          onLongPress={() => {
-            setSelectedMessage(props.currentMessage);
-            setModalVisible(true);
-          }}
-          onPress={() => Linking.openURL(file.url)}
-          style={{
-            width: "70%",
-            height: 60,
-            marginBottom: 5,
-            marginLeft: isCurrentUser ? "27%" : "2%",
-            backgroundColor: "grey",
-            borderRadius: 10,
-            justifyContent: "center",
-          }}
-        >
-          <View style={{ width: "100%", height: "100%", flexDirection: "row" }}>
-            <View
-              style={{
-                width: "30%",
-                height: "100%",
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Image
-                source={
-                  icons[fileTypeDocument] || require("../assets/pdf-icon.png")
-                }
-                style={{ width: 40, height: 40 }}
-              />
-            </View>
-            <View
-              style={{ width: "70%", height: "100%", justifyContent: "center" }}
-            >
-              <Text
-                style={{ color: "#FFF", fontSize: 16, fontWeight: "500" }}
-                numberOfLines={2}
-              >
-                {file.name} File -{file.size} kb
-              </Text>
-            </View>
-          </View>
-        </TouchableOpacity>
-      );
-    }
-  }
-
-  // custom gửi text
-  const renderMessageText = (props) => {
-    const { text, type, user } = props.currentMessage;
-    const isCurrentUser = user._id === currentUser.user.uid;
-    const bgrColor = {
-      deleted: "#B9BDC1",
-      notify: "#ff8fab",
-    };
-    return (
-      <View style={{ marginLeft: '5%', justifyContent: 'center', borderTopLeftRadius: isCurrentUser ? 20 : 0, borderTopRightRadius: isCurrentUser ? 20 : 0, backgroundColor: isCurrentUser ? '#0084FF' : 'white' }}>
-        {isCurrentUser ? (
-          <Text style={{ color: type === "deleted" ? "#000" : "#fff" }}>
-            {text}
-          </Text>
-        ) : (
-          <Text style={{ color: type === "deleted" ? "#000" : "#000" }}>
-            {text}
-          </Text>
+              resizeMode="cover"
+            />
+          </TouchableOpacity>
         )}
-      </View>
-    )
-  }
-
-  //  custom gửi image
-  const renderMessageImage = (props) => {
-    const { image } = props.currentMessage;
-    const isCurrentUser = props.currentMessage.user._id === currentUser.user.uid;
-    return (
-      <TouchableOpacity
-        style={{
-          width: 280,
-          height: 300,
-          // marginLeft: isCurrentUser ? "30%" : "2.5%",
-          marginTop: '2.5%',
-          backgroundColor: 'white'
+        renderCustomView={() => {
+          const icons = {
+            "application/pdf": require("../assets/pdf-icon.png"),
+            "application/msword": require("../assets/word-icon.png"),
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document": require("../assets/word-icon.png"),
+            "application/vnd.ms-powerpoint": require("../assets/ppt-icon.png"),
+            "application/vnd.openxmlformats-officedocument.presentationml.presentation": require("../assets/ppt-icon.png"),
+            "application/vnd.rar": require("../assets/rar-icon.png"),
+            "application/zip": require("../assets/rar-icon.png"),
+            "text/csv": require("../assets/csv-icon.png"),
+          };
+          // console.log("file:");
+          // console.log(file);
+          if (file?.url) {
+            return (
+              <View>
+                <TouchableOpacity
+                  style={{
+                    width: "95%",
+                    height: 60,
+                    borderWidth: 1,
+                    marginLeft: isCurrentUser ? "2.5%" : '2.5%',
+                    marginTop: 5,
+                    marginBottom: 10,
+                    backgroundColor: "grey",
+                    borderRadius: 10,
+                    justifyContent: "center",
+                  }}
+                  onLongPress={() => {
+                    setSelectedMessage(props.currentMessage);
+                    setModalVisible(true);
+                  }}
+                  onPress={() => Linking.openURL(file.url)}
+                >
+                  <View style={{ width: "100%", height: "100%", flexDirection: "row" }}>
+                    <View
+                      style={{
+                        width: "30%",
+                        height: "100%",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <Image
+                        source={
+                          icons[fileTypeDocument] || require("../assets/pdf-icon.png")
+                        }
+                        style={{ width: 40, height: 40 }}
+                      />
+                    </View>
+                    <View
+                      style={{ width: "70%", height: "100%", justifyContent: "center" }}
+                    >
+                      <Text
+                        style={{ color: "#FFF", fontSize: 16, fontWeight: "500" }}
+                        numberOfLines={2}
+                      >
+                        {file.name} File -{file.size} kb
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            );
+          }
         }}
-        onLongPress={() => {
-          setSelectedMessage(props.currentMessage);
-          setModalImageVisible(true);
-        }}
-      >
-        <Image
-          source={{ uri: image }}
-          style={{
-            width: 280,
-            height: "95%",
-            borderRadius: 20,
-            paddingTop: 5,
-            paddingBottom: 5,
-            backgroundColor: 'red'
-          }}
-          resizeMode="cover"
-        />
-      </TouchableOpacity>
-    );
+      />);
   }
   // gửi video
   const renderMessageVideo = (props) => {
@@ -1062,9 +835,8 @@ export default function Conversations({ route, navigation }) {
                   justifyContent: "center",
                 }}
                 onPress={() => {
-                  console.log("selectedMessage: ", props.currentMessage);
                   setSelectedMessage(props.currentMessage);
-                  setModalVideoVisible(true);
+                  setModalVisible(true);
                 }}
               >
                 <Entypo
@@ -1119,7 +891,7 @@ export default function Conversations({ route, navigation }) {
               style={{ width: 30, height: "100%", justifyContent: "center" }}
               onPress={() => {
                 setSelectedMessage(props.currentMessage);
-                setModalVideoVisible(true);
+                setModalVisible(true);
               }}
             >
               <Entypo name="dots-three-horizontal" size={24} color="black" />
@@ -1235,7 +1007,7 @@ export default function Conversations({ route, navigation }) {
   };
   // Giao diện
   return (
-    <View style={{ width: "100%", height: "100%" }}>
+    <View style={styles.container}>
       {videoCall ? (
         <AgoraUIKit connectionData={connectionData} rtcCallbacks={callbacks} />
       ) : <GiftedChat
@@ -1252,14 +1024,15 @@ export default function Conversations({ route, navigation }) {
           left: { color: "#95999A" },
           right: { color: "#F0F0F0" },
         }} // Màu của thời gian
-        showAvatarForEveryMessage={true} // Hiện avatar của người gửi
+        // showUserAvatar={true} // Hiện avatar của người gửi
+        renderAvatarOnTop={true}
+        // showAvatarForEveryMessage={true} // Hiện avatar của người gửi
         renderBubble={renderBubble} // custom bubble
-        renderMessageVideo={renderMessageVideo}
+        // renderMessageVideo={renderMessageVideo}
         renderSend={renderSend} // custom icon gửi thay vì chữ SEND
-        renderUsernameOnMessage={true} // hiện tên người gửi bên dưới nội dung
+        // renderUsernameOnMessage={true} // hiện tên người gửi bên dưới nội dung
         renderInputToolbar={renderInputToolBar} // custom thanh bar của tin nhắn
         onLongPress={(context, message) => onMessageLongPress(context, message)}
-
       />}
       {/* Modal thông báo người nhận không liên lạc được */}
       <Modal
@@ -1281,7 +1054,7 @@ export default function Conversations({ route, navigation }) {
           </Text>
         </View>
       </Modal>
-      {/* ================================================================= Modal khi xóa tin nhắn text */}
+      {/* ================================================================= Modal khi xóa tin nhắn */}
       <Modal
         isVisible={isModalVisible}
         onBackdropPress={toggleUnsendMessage}
@@ -1297,27 +1070,56 @@ export default function Conversations({ route, navigation }) {
         backdropTransitionOutTiming={600}
         hideModalContentWhileAnimating={true}
       >
-        <View
-          style={{
-            width: 325,
-            height: messageLength + 70,
-            marginLeft: 20,
-            backgroundColor: "#52A0FF",
-            borderRadius: 10,
-            justifyContent: "center",
-          }}
-        >
-          <Text
+
+        {selectedMessage?.text ? ( // ========================== Nếu tin nhắn là text
+          <View
             style={{
-              fontWeight: "500",
-              fontSize: 18,
-              marginLeft: 5,
-              color: "#FFF",
+              width: 325,
+              // height: messageLength + 70,
+              marginLeft: 20,
+              backgroundColor: "#52A0FF",
+              borderRadius: 10,
+              justifyContent: "center",
             }}
           >
-            {selectedMessage.text}
-          </Text>
-        </View>
+            <Text
+              style={{
+                fontWeight: "500",
+                fontSize: 18,
+                marginLeft: 5,
+                color: "#FFF",
+              }}
+            >
+              {selectedMessage.text}
+            </Text>
+          </View>
+        ) : (selectedMessage?.image ? ( // ========================== Nếu tin nhắn là image
+          <View style={{ width: 250, height: 300, marginLeft: 70 }}>
+            <Image
+              source={{
+                uri: selectedMessage.image
+                  ? selectedMessage.image
+                  : selectedMessage.url,
+              }}
+              style={{ width: "100%", height: "100%", borderRadius: 20 }}
+            />
+          </View>
+
+        ) : (selectedMessage?.video ? (
+          <View style={{ width: 250, height: 300, marginLeft: 50 }}>
+            <Video
+              source={{
+                uri: selectedMessage.file?.url
+                  ? selectedMessage.file?.url
+                  : selectedMessage.video,
+              }}
+              style={{ width: "100%", height: "100%", borderRadius: 20 }}
+              resizeMode="cover"
+            />
+          </View>
+
+        ) : (null)))}
+
         {currentUser.user.uid === selectedMessage.user?._id ? (
           <View
             style={{
@@ -1355,6 +1157,8 @@ export default function Conversations({ route, navigation }) {
                     conversationId: conversationInfo?.conversationId,
                   });
                   setModalVisible(false);
+                  setModalImageVisible(false);
+                  setModalVideoVisible(false);
                 }}
               >
                 <Image
@@ -1450,7 +1254,7 @@ export default function Conversations({ route, navigation }) {
           </View>
         )}
       </Modal>
-      {/* ================================================================= Modal xác nhận khi xóa tin nhắn text */}
+      {/* ================================================================= Modal xác nhận khi xóa tin nhắn */}
       <Modal
         isVisible={isConfirmModalVisible}
         onBackdropPress={toggleConfirmUnsendMessage}
@@ -1486,7 +1290,7 @@ export default function Conversations({ route, navigation }) {
               marginTop: 25,
             }}
           >
-            Bạn có muốn xóa tin nhắn này?
+            Bạn có muốn xóa {selectedMessage.text ? 'tin nhắn' : (selectedMessage.image ? 'hình ảnh' : 'video')} này?
           </Text>
           <Text
             style={{
@@ -1496,7 +1300,7 @@ export default function Conversations({ route, navigation }) {
               marginTop: 10,
             }}
           >
-            Tin nhắn này sẽ được xóa ở phía bạn
+            {selectedMessage.text ? 'Tin nhắn' : (selectedMessage.image ? 'Hình ảnh' : 'Video')} này sẽ được xóa ở phía bạn
           </Text>
           <View style={{ borderWidth: 0.5, width: "100%", marginTop: 10 }} />
           <View
@@ -1511,469 +1315,6 @@ export default function Conversations({ route, navigation }) {
             <TouchableOpacity
               onPress={() => {
                 setIsConfirmModalVisible(false);
-              }}
-            >
-              <Text style={{ fontSize: 18, fontWeight: "800" }}>Hủy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={deleteMessage}>
-              <Text style={{ fontSize: 18, fontWeight: "800", color: "red" }}>
-                Xóa
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* ================================================================= Modal khi xóa tin nhắn hình ảnh */}
-      <Modal
-        isVisible={isModalImageVisible}
-        onBackdropPress={toggleUnsendImage}
-        style={{
-          position: "absolute",
-          top: 250,
-          left: 35,
-        }}
-        backdropOpacity={0.65}
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        backdropTransitionInTiming={600}
-        backdropTransitionOutTiming={600}
-        hideModalContentWhileAnimating={true}
-      >
-        <View style={{ width: 250, height: 300, marginLeft: 70 }}>
-          <Image
-            source={{
-              uri: selectedMessage.image
-                ? selectedMessage.image
-                : selectedMessage.url,
-            }}
-            style={{ width: "100%", height: "100%", borderRadius: 20 }}
-          />
-        </View>
-        {currentUser.user.uid === selectedMessage.user?._id ? (
-          <View
-            style={{
-              width: 325,
-              height: 70,
-              borderRadius: 10,
-              backgroundColor: "#FFF",
-              marginLeft: 0,
-              marginTop: 10,
-              marginBottom: 30,
-            }}
-          >
-            <View
-              style={{
-                width: "90%",
-                height: "90%",
-                marginLeft: "5%",
-                marginTop: "2%",
-                flexDirection: "row",
-                justifyContent: "space-evenly",
-              }}
-            >
-              <View style={{ width: 55, height: 60, alignItems: "center" }}>
-                <Image
-                  source={require("../assets/reply.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Reply</Text>
-              </View>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  navigation.navigate("ForwardMessage", {
-                    message: selectedMessage,
-                    conversationId: conversationInfo?.conversationId,
-                  });
-                  setModalImageVisible(false);
-                }}
-              >
-                <Image
-                  source={require("../assets/arrow.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Forward</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={unsendMessage}
-              >
-                <Image
-                  source={require("../assets/message.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Recall</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  setModalVideoVisible(false);
-                  setIsConfirmModalVideoVisible(true);
-                }}
-              >
-                <Image
-                  source={require("../assets/delete.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View
-            style={{
-              width: 325,
-              height: 70,
-              borderRadius: 10,
-              backgroundColor: "#FFF",
-              marginLeft: 0,
-              marginTop: 10,
-              marginBottom: 30,
-            }}
-          >
-            <View
-              style={{
-                width: "90%",
-                height: "90%",
-                marginLeft: "5%",
-                marginTop: "2%",
-                flexDirection: "row",
-                justifyContent: "space-evenly",
-              }}
-            >
-              <View style={{ width: 55, height: 60, alignItems: "center" }}>
-                <Image
-                  source={require("../assets/reply.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Reply</Text>
-              </View>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  navigation.navigate("ForwardMessage", {
-                    message: selectedMessage,
-                    conversationId: conversationInfo?.conversationId,
-                  });
-                  setModalImageVisible(false);
-                }}
-              >
-                <Image
-                  source={require("../assets/arrow.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Forward</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  setModalVideoVisible(false);
-                  setIsConfirmModalVideoVisible(true);
-                }}
-              >
-                <Image
-                  source={require("../assets/delete.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </Modal>
-      {/* ================================================================= Modal xác nhận khi xóa tin nhắn hình ảnh */}
-      <Modal
-        isVisible={isConfirmModalImageVisible}
-        onBackdropPress={toggleConfirmUnsendImage}
-        style={{
-          position: "absolute",
-          top: 300,
-          left: 20,
-        }}
-        backdropOpacity={0.65}
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        backdropTransitionInTiming={600}
-        backdropTransitionOutTiming={600}
-        hideModalContentWhileAnimating={true}
-      >
-        <View
-          style={{
-            width: 325,
-            height: 160,
-            borderRadius: 10,
-            backgroundColor: "#FFF",
-            marginLeft: 0,
-            marginTop: 0,
-            marginBottom: 30,
-          }}
-        >
-          <Text
-            style={{
-              width: 260,
-              fontSize: 20,
-              fontWeight: "600",
-              marginLeft: 10,
-              marginTop: 25,
-            }}
-          >
-            Bạn có muốn xóa hình ảnh này?
-          </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "400",
-              marginLeft: 10,
-              marginTop: 10,
-            }}
-          >
-            Hình ảnh này sẽ được xóa ở phía bạn
-          </Text>
-          <View style={{ borderWidth: 0.5, width: "100%", marginTop: 10 }} />
-          <View
-            style={{
-              width: "100%",
-              height: "50%",
-              marginTop: 10,
-              flexDirection: "row",
-              justifyContent: "space-around",
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                setIsConfirmModalImageVisible(false);
-              }}
-            >
-              <Text style={{ fontSize: 18, fontWeight: "800" }}>Hủy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={deleteMessage}>
-              <Text style={{ fontSize: 18, fontWeight: "800", color: "red" }}>
-                Xóa
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-      {/* ================================================================= Modal khi xóa tin nhắn video */}
-      <Modal
-        isVisible={isModalVideoVisible}
-        onBackdropPress={toggleUnsendVideo}
-        style={{
-          position: "absolute",
-          top: 250,
-          left: 35,
-        }}
-        backdropOpacity={0.65}
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        backdropTransitionInTiming={600}
-        backdropTransitionOutTiming={600}
-        hideModalContentWhileAnimating={true}
-      >
-        <View style={{ width: 250, height: 300, marginLeft: 50 }}>
-          <Video
-            source={{
-              uri: selectedMessage.file?.url
-                ? selectedMessage.file?.url
-                : selectedMessage.video,
-            }}
-            style={{ width: "100%", height: "100%", borderRadius: 20 }}
-            resizeMode="cover"
-          />
-        </View>
-        {currentUser.user.uid === selectedMessage.user?._id ? (
-          <View
-            style={{
-              width: 325,
-              height: 70,
-              borderRadius: 10,
-              backgroundColor: "#FFF",
-              marginLeft: 0,
-              marginTop: 10,
-              marginBottom: 30,
-            }}
-          >
-            <View
-              style={{
-                width: "90%",
-                height: "90%",
-                marginLeft: "5%",
-                marginTop: "2%",
-                flexDirection: "row",
-                justifyContent: "space-evenly",
-              }}
-            >
-              <View style={{ width: 55, height: 60, alignItems: "center" }}>
-                <Image
-                  source={require("../assets/reply.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Reply</Text>
-              </View>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  navigation.navigate("ForwardMessage", {
-                    message: selectedMessage,
-                    conversationId: conversationInfo?.conversationId,
-                  });
-                  setModalVideoVisible(false);
-                }}
-              >
-                <Image
-                  source={require("../assets/arrow.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Forward</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={unsendMessage}
-              >
-                <Image
-                  source={require("../assets/message.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Recall</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  setModalVideoVisible(false);
-                  setIsConfirmModalVideoVisible(true);
-                }}
-              >
-                <Image
-                  source={require("../assets/delete.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        ) : (
-          <View
-            style={{
-              width: 325,
-              height: 70,
-              borderRadius: 10,
-              backgroundColor: "#FFF",
-              marginLeft: 0,
-              marginTop: 10,
-              marginBottom: 30,
-            }}
-          >
-            <View
-              style={{
-                width: "90%",
-                height: "90%",
-                marginLeft: "5%",
-                marginTop: "2%",
-                flexDirection: "row",
-                justifyContent: "space-evenly",
-              }}
-            >
-              <View style={{ width: 55, height: 60, alignItems: "center" }}>
-                <Image
-                  source={require("../assets/reply.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Reply</Text>
-              </View>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  navigation.navigate("ForwardMessage", {
-                    message: selectedMessage,
-                    conversationId: conversationInfo?.conversationId,
-                  });
-                  setModalVideoVisible(false);
-                }}
-              >
-                <Image
-                  source={require("../assets/arrow.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Forward</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={{ width: 55, height: 60, alignItems: "center" }}
-                onPress={() => {
-                  setModalVideoVisible(false);
-                  setIsConfirmModalVideoVisible(true);
-                }}
-              >
-                <Image
-                  source={require("../assets/delete.png")}
-                  style={{ width: 32, height: 32 }}
-                />
-                <Text>Delete</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-      </Modal>
-      {/* ================================================================= Modal xác nhận khi xóa tin nhắn video */}
-      <Modal
-        isVisible={isConfirmModalVideoVisible}
-        onBackdropPress={toggleConfirmUnsendVideo}
-        style={{
-          position: "absolute",
-          top: 300,
-          left: 20,
-        }}
-        backdropOpacity={0.65}
-        animationIn="slideInUp"
-        animationOut="slideOutDown"
-        backdropTransitionInTiming={600}
-        backdropTransitionOutTiming={600}
-        hideModalContentWhileAnimating={true}
-      >
-        <View
-          style={{
-            width: 325,
-            height: 160,
-            borderRadius: 10,
-            backgroundColor: "#FFF",
-            marginLeft: 0,
-            marginTop: 0,
-            marginBottom: 30,
-          }}
-        >
-          <Text
-            style={{
-              width: 260,
-              fontSize: 20,
-              fontWeight: "600",
-              marginLeft: 10,
-              marginTop: 25,
-            }}
-          >
-            Bạn có muốn xóa video này?
-          </Text>
-          <Text
-            style={{
-              fontSize: 16,
-              fontWeight: "400",
-              marginLeft: 10,
-              marginTop: 10,
-            }}
-          >
-            Video này sẽ được xóa ở phía bạn
-          </Text>
-          <View style={{ borderWidth: 0.5, width: "100%", marginTop: 10 }} />
-          <View
-            style={{
-              width: "100%",
-              height: "50%",
-              marginTop: 10,
-              flexDirection: "row",
-              justifyContent: "space-around",
-            }}
-          >
-            <TouchableOpacity
-              onPress={() => {
-                setIsConfirmModalVideoVisible(false);
               }}
             >
               <Text style={{ fontSize: 18, fontWeight: "800" }}>Hủy</Text>
@@ -2030,7 +1371,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#D3D3D3",
-    alignItems: "center",
   },
   video: {
     position: "absolute",
