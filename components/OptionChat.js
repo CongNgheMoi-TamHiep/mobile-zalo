@@ -56,7 +56,8 @@ const OptionChat = ({ route }) => {
   const [listMembers, setListMembers] = useState([]);
   const fetchData = async() => {
     const response = await axiosPrivate.get(`/group/${route.params?.conversationInfo.conversationId}`);
-    setDataConversation(response);
+    // console.log("objectresponseresponse", response)
+    setDataConversation(response);  
     const a = response.members.filter((item) => item._id != currentUser.user.uid);
     setListMembers(a);
     if (route.params.conversationInfo.type === "group") {
@@ -143,7 +144,10 @@ const OptionChat = ({ route }) => {
     }
   }
 
-
+  // hàm kiểm tra user có phải phó nhóm trong nhóm không
+  const checkIsPhoNhom = (userId) => {
+    return dataConversation?.deputyList?.some(deputy => deputy?._id === userId);
+}
   return (
     <View style={styles.container}>
       <ScrollView style={{ width: "100%", height: "100%" }}>
@@ -474,6 +478,35 @@ const OptionChat = ({ route }) => {
             </TouchableOpacity>
           </View>
         )}
+         {dataConversation?.adminId==currentUser.user.uid || checkIsPhoNhom(currentUser.user.uid)  ? (
+          <View
+            style={{
+              backgroundColor: "white",
+              width: "100%",
+              marginVertical: 1,
+            }}
+          >
+            <TouchableOpacity
+              onPress={() => {
+                // navigation.navigate("ListMemberGroup", { member: dataMember, idGroup: route.params.id});
+              }}
+              style={styles.item}
+            >
+              <TouchableOpacity
+                style={styles.contentButton}
+                onPress={() => {
+                  navigation.navigate("BrowseMembers", {dataConversation: dataConversation });
+                }}
+              >
+                <Feather name="users" size={22} color="#767A7F" />
+                <Text style={styles.text}>
+                 Duyệt thành viên 
+                </Text>
+              </TouchableOpacity>
+            </TouchableOpacity>
+          </View>
+        ) : null
+        }
 
         {isGroup ? (
           <View

@@ -35,6 +35,7 @@ import OptionChat from "./components/OptionChat.js";
 import ViewMember from "./components/ViewMember.js";
 import AddMembers from './components/AddMembers.js';
 import TranferAdmin from './components/TranferAdmin.js'
+import BrowseMembers from './components/BrowseMembers.js'
 // ...
 
 const auth = getAuth();
@@ -161,6 +162,18 @@ function ChatStack() {
           component={QRCode}
           options={{
             headerShown: false,
+          }}
+        />
+        <Stack.Screen
+          name="BrowseMembers"
+          component={BrowseMembers}
+          options={{
+            headerShown: true,
+            title: "Duyệt thành viên",
+            headerStyle: {
+              backgroundColor: "#00aaff",
+            },
+            headerTintColor: "white",
           }}
         />
       </Stack.Navigator>
