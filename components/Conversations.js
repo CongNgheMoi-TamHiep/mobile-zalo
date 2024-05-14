@@ -156,7 +156,7 @@ export default function Conversations({ route, navigation }) {
 
   useEffect(() => {
     const conversationInfo = route.params?.conversationInfo;
-
+    console.log("conversation infoooooooo ==========================", conversationInfo);
     // console.log('conversation infoooooooo ==========================')
     const conversationId = conversationInfo?.conversationId;
     (async () => {
@@ -461,7 +461,7 @@ export default function Conversations({ route, navigation }) {
                           }else{
                             navigation.navigate('OptionChat', {
                               conversationInfo: conversationInfo,
-                              listMembers: conversationInfo?.members.filter(member => member._id !== currentUser.user.uid),
+                              listMembers: conversationInfo?.members?.filter(member => member._id !== currentUser.user.uid),
                             })
                           }
                          

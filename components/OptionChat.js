@@ -56,7 +56,7 @@ const OptionChat = ({ route }) => {
   const [listMembers, setListMembers] = useState([]);
   const fetchData = async() => {
     const response = await axiosPrivate.get(`/group/${route.params?.conversationInfo.conversationId}`);
-    // console.log("objectresponseresponse", response)
+    console.log("objectresponseresponse", response)
     setDataConversation(response);  
     const a = response.members.filter((item) => item._id != currentUser.user.uid);
     setListMembers(a);
@@ -70,7 +70,6 @@ const OptionChat = ({ route }) => {
       setIsGroup(false);
     }
   }
-
   useEffect(() => {
     const unsubcribe = navigation.addListener("focus", () => {
       // console.log("sadjfasf");
@@ -158,7 +157,7 @@ const OptionChat = ({ route }) => {
               source={{
                 uri: isGroup
                   ? dataConversation?.image
-                  : dataConversation?.user?.avatar,
+                  : listMembers[0]?.avatar,
               }}
             />
           </TouchableOpacity>
@@ -169,7 +168,7 @@ const OptionChat = ({ route }) => {
             </Text>
           ) : (
             <Text style={{ fontSize: 19, fontWeight: 500, marginTop: 7 }}>
-              {dataConversation?.user?.name}
+              {listMembers[0]?.name}
             </Text>
           )}
           <View style={styles.ViewBottomTop}>
@@ -337,7 +336,7 @@ const OptionChat = ({ route }) => {
         >
           <TouchableOpacity
             onPress={() => {
-              navigation.navigate("OptionChat2", { account: route.params });
+              // navigation.navigate("OptionChat2", { account: route.params });
             }}
             activeOpacity={0.7}
             style={[styles.item, { height: 125 }]}
@@ -438,7 +437,7 @@ const OptionChat = ({ route }) => {
               <View style={styles.contentButton}>
                 <AntDesign name="addusergroup" size={22} color="#767A7F" />
                 <Text style={styles.text}>
-                  Tạo nhóm với {dataConversation?.user?.name}
+                  Tạo nhóm với {listMembers[0]?.name}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -472,7 +471,7 @@ const OptionChat = ({ route }) => {
               <View style={styles.contentButton}>
                 <SimpleLineIcons name="user-follow" size={22} color="#767A7F" />
                 <Text style={styles.text}>
-                  Thêm {dataConversation?.user?.name} vào nhóm
+                  Thêm {listMembers[0]?.name} vào nhóm
                 </Text>
               </View>
             </TouchableOpacity>
