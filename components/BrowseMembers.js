@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import Modal from "react-native-modal";
 import { View, Text, StyleSheet, Switch,FlatList,Image, TouchableOpacity } from "react-native";
 import axiosPrivate from "../api/axiosPrivate";
-
+import { Entypo } from '@expo/vector-icons';
+import { set } from "date-fns";
 export default function ViewMember({ navigation, route }) {
   const [isEnabled, setIsEnabled] = useState(false);
   const [dataConversation, setDataConversation] = useState([]);
@@ -37,6 +39,35 @@ export default function ViewMember({ navigation, route }) {
           }
      
   }
+  const [modalVisible, setModalVisible] = useState(false);
+  const toggleModal = () => {
+    setModalVisible(!modalVisible);
+  };
+  async function DongYAll(){
+    try {
+      for (const id of dataConversation?.waitingList) {
+        const res = await axiosPrivate.post(`/group/addMember/${dataConversation._id}`, {
+          userId: id._id
+      });
+    }
+        fetchDataWaitList()
+        toggleModal()
+    }
+        catch (error) {
+            console.error("Lỗi khi chấp nhận", error);
+          }
+  }
+  async function TuchoiAll(){
+    try {
+      
+        // const res = await axiosPrivate.post(`/group/rejectAllMember/${dataConversation._id}`);
+        toggleModal()
+        fetchDataWaitList()
+    }
+        catch (error) {
+            console.error("Lỗi khi chấp nhận", error);
+          }
+  }
   return (
     <View style={styles.container}>
       <View
@@ -66,7 +97,14 @@ export default function ViewMember({ navigation, route }) {
         </View>
       </View>
       <View style={{width:'100%',padding:10,height:'82%',backgroundColor:'#fff'}}>
+        <View style={{flexDirection:'row',justifyContent:'space-between'}}>
         <Text style={{fontSize: 18, color: "#0250B6", fontWeight: "500"}}>Danh sách chờ ({dataConversation?.waitingList?.length})</Text>
+          <TouchableOpacity onPress={()=>{
+            setModalVisible(!modalVisible)
+          }}>
+          <Entypo name="dots-three-vertical" size={22} color="gray" />
+          </TouchableOpacity>
+        </View>
         <FlatList
             data={dataConversation?.waitingList}
             keyExtractor={(item) => item._id}
@@ -77,10 +115,10 @@ export default function ViewMember({ navigation, route }) {
                     source={{uri: item.avatar}}
                     />
                     <View style={{marginLeft: 10,gap:4}}>
-                        <Text style={{fontSize: 18, fontWeight: '500'}}>{item.name}</Text>
+                        <Text style={{fontSize: 18, fontWeight: '500'}}>{item?.name}</Text>
                         <Text style={{fontSize: 17, color: '#767A7F'}}>Được thêm bởi  
                         <Text style={{color:'black', fontWeight:500}}>
-                        {" "} {item.userAdded.name}
+                        {" "} {item.userAdded?.name}
                         </Text>
                        </Text>
                        <View style={{flexDirection:'row',gap:15}}>
@@ -100,6 +138,27 @@ export default function ViewMember({ navigation, route }) {
             )}
         />
       </View>
+      <Modal
+        isVisible={modalVisible}
+        onBackdropPress={toggleModal}
+        style={styles.modal}
+        backdropOpacity={0.65}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropTransitionInTiming={600}
+        backdropTransitionOutTiming={600}
+        hideModalContentWhileAnimating={true}
+      >
+        <View style={styles.modalContent}>
+         <TouchableOpacity onPress={DongYAll} style={{width:150,height:40,alignItems:'center',justifyContent:'center',borderRadius:15,borderWidth:1,backgroundColor:'#006AF5'}}>
+          <Text style={{fontSize:18,color:'white'}}>Duyệt tất cả</Text>
+         </TouchableOpacity>
+         <TouchableOpacity onPress={TuchoiAll} style={{width:150,height:40,alignItems:'center',justifyContent:'center',borderRadius:15,borderWidth:1,backgroundColor:'#767A7F'}}>
+
+          <Text style={{fontSize:18,color:'white'}}>Từ chối tất cả</Text>
+         </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -109,5 +168,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#D6D9DC",
     gap:10
+  }, modal: {
+    justifyContent: "flex-end",
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: "white",
+    padding: 15,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    gap: 12,
+    alignItems: "center",
+  },
+  modalItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
+  },
+  modalText: {
+    fontSize: 18,
   },
 });
