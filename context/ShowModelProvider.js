@@ -44,31 +44,33 @@ const ShowModelProvider = ({ children }) => {
   }
   //lắng nghe sự kiện nhận lời mời kết bạn
   useEffect(() => {
-    socket.on("receiveFriendRequest", (data) => {
-      setDataFriendRequest(data);
-    });
-    socket.on("acceptFriendRequest", (data) => {
-      setDataAccepted(data);
-    });
-    socket.on("receive-call", async (data) => {
-      if (data.caller != currentUser.user.uid) {
-        playSound()
-        const user = await axiosPrivate(`/user/${data.caller}`);
-
-        setCaller(user);
-        console.log("data: ", data);
-        setDataReviverCall(data);
-      }
-    });
-    socket.on("end-call", (data) => {
-      //   console.log("end call",data)
-      //  setDataReviverCall(null);
-      setVideoCallModelState(false);
-      stopSound()
-      setshowReviverCall(false);
-    
-    });
-  }, [socket.id]);
+    if(socket) { 
+      socket.on("receiveFriendRequest", (data) => {
+        setDataFriendRequest(data);
+      });
+      socket.on("acceptFriendRequest", (data) => {
+        setDataAccepted(data);
+      });
+      socket.on("receive-call", async (data) => {
+        if (data.caller != currentUser.user.uid) {
+          playSound()
+          const user = await axiosPrivate(`/user/${data.caller}`);
+  
+          setCaller(user);
+          console.log("data: ", data);
+          setDataReviverCall(data);
+        }
+      });
+      socket.on("end-call", (data) => {
+        //   console.log("end call",data)
+        //  setDataReviverCall(null);
+        setVideoCallModelState(false);
+        stopSound()
+        setshowReviverCall(false);
+      
+      });
+    }
+  }, [socket]);
 
   //hiển thị model thông báo lời mời kết bạn
   useEffect(() => {

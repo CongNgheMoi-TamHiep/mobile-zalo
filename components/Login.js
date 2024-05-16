@@ -47,6 +47,7 @@ export default function App({ navigation }) {
           navigation.navigate("MyTabs");
         })
         .catch((error) => {
+          console.log(error)
           setErrorMessage("Tài khoản hoặc mật khẩu không đúng");
         });
     } else {
