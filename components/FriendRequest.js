@@ -42,16 +42,16 @@ function DaNhan({ navigation }) {
   const currentUser = useCurrentUser();
   const { socket } = useSocket();
   useEffect(() => {
-    console.log("socket.id");
-    console.log(socket.id);
-    socket.on("receiveFriendRequest", (data) => {
-      getReceivedFriendRequests();
-      setReq(data);
-    });
-    socket.on("cancelFriendRequest", (data) => {
-      getReceivedFriendRequests();
-    });
-  }, [socket.id]);
+    if(socket) { 
+      socket.on("receiveFriendRequest", (data) => {
+        getReceivedFriendRequests();
+        setReq(data);
+      });
+      socket.on("cancelFriendRequest", (data) => {
+        getReceivedFriendRequests();
+      });
+    }
+  }, [socket]);
 
   useEffect(() => {
     if (req) setDataDaNhan([...dataDaNhan, req]);
@@ -167,12 +167,14 @@ function DaGui({ navigation }) {
   const [dataDaGui, setdataDaGui] = useState([]);
   const { socket } = useSocket();
   useEffect(() => {
-    console.log("socket.id");
-    console.log(socket.id);
-    socket.on("acceptFriendRequest", (data) => {
-      getSentFriendRequests();
-    });
-  }, [socket.id]);
+    if(socket) { 
+      console.log("socket.id");
+      console.log(socket.id);
+      socket.on("acceptFriendRequest", (data) => {
+        getSentFriendRequests();
+      });
+    }
+  }, [socket]);
   useEffect(() => {
     getSentFriendRequests();
   }, []);

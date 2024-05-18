@@ -57,35 +57,37 @@ export default function Chat({  }) {
     }
 
     useEffect(() => {
-        socket.on("getMessage", (chat) => {
-            setChatReceived(chat);
-        })
-        socket.on("newConversation", (conversation) => {
-            console.log("newconversation:");
-            console.log(conversation);
-            setNewConversation(conversation);
-        })
-        socket.on("deleteConversation", (conversationId) => {
-            // console.log("delete socket: ", conversationId);
-            //     return [...prevData.filter((item) => item.conversationId !== conversationId)]
-            // })
-            console.log("delele user"); 
-            setData((prevData) => {
-                return [...prevData.map((item) => {
-                    if (item.conversationId === conversationId) {
-                        return { ...item, deleted: true, state: "deleted"}
-                    }
-                    return item;
-                })]
+        if(socket) { 
+            socket.on("getMessage", (chat) => {
+                setChatReceived(chat);
             })
-            socket.emit("leaveRoom", conversationId);
-            fetchData();
-        })
-    });
+            socket.on("newConversation", (conversation) => {
+                console.log("newconversation:");
+                console.log(conversation);
+                setNewConversation(conversation);
+            })
+            socket.on("deleteConversation", (conversationId) => {
+                // console.log("delete socket: ", conversationId);
+                //     return [...prevData.filter((item) => item.conversationId !== conversationId)]
+                // })
+                console.log("delele user"); 
+                setData((prevData) => {
+                    return [...prevData.map((item) => {
+                        if (item.conversationId === conversationId) {
+                            return { ...item, deleted: true, state: "deleted"}
+                        }
+                        return item;
+                    })]
+                })
+                socket.emit("leaveRoom", conversationId);
+                fetchData();
+            })
+        }
+    }, [socket]);
 
     useEffect(() => {
         if (newConversation) {
-         
+
             setData((prevData) => {
                 return [newConversation, ...prevData];
             });
@@ -104,7 +106,7 @@ export default function Chat({  }) {
     }, [navigation]);
 
     useEffect(() => {
-        if(data?.length > 0) { 
+        if (data?.length > 0) {
             data.map((item) => {
                 if(item.conversationId&&item.state!== "deleted" && item.deleted!=true)
 
@@ -192,9 +194,12 @@ export default function Chat({  }) {
                     <Text style={{ fontSize: 16, color: "grey" }}>
                         {/* {(isNew && chatReceived?.content?.text) || item?.lastMess.content?.text} */}
                         {
-                            ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.length > 44 ?
-                                (((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.substring(0, 44) + '...') :
-                                ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)
+                            item?.lastMess?.content?.image ? ("[Hình ảnh]") : (item?.lastMess?.content?.video ? "[Video]" : item?.lastMess?.content?.text ?
+                                ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.length > 44 ?
+                                    (((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)?.substring(0, 44) + '...') :
+                                    ((isNew && chatReceived?.content?.text) || item?.lastMess?.content?.text)
+                                : "[File]")
+
                         }
                     </Text>
                 </View>
@@ -267,7 +272,7 @@ export default function Chat({  }) {
                     }}
                     data={data}
                     renderItem={renderItem}
-                    keyExtractor={(item) => item?.conversationId}
+                    keyExtractor={(item) => item?.conversationId.toString()}
                 />
             </View>
             {/* ============================================ render modal create group */}
