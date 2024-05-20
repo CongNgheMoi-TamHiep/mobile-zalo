@@ -48,7 +48,8 @@ export default function Chat({  }) {
             data = data?.sort((a, b) => {
                 return new Date(b.lastMess.createdAt) - new Date(a.lastMess.createdAt);
             });
-            setData(data);
+            if(data)
+                setData(data);
         } catch (error) {
             console.error("Error fetching user conversations:", error);
         } finally {
@@ -170,10 +171,10 @@ export default function Chat({  }) {
                 <View
                     style={{ width: "20%", height: 70, alignItems: "center" }}
                 >
-                    <Image
-                        source={{ uri: item?.user?.avatar || item?.image }}
-                        style={{ width: 60, height: 60, borderRadius: 50 }}
-                    />
+                        <Image
+                            source={{ uri: item?.user?.avatar || item?.image }}
+                            style={{ width: 60, height: 60, borderRadius: 50 }}
+                        />
                 </View>
                 <View
                     style={{
@@ -272,7 +273,7 @@ export default function Chat({  }) {
                     }}
                     data={data}
                     renderItem={renderItem}
-                    keyExtractor={(item) => item?.conversationId.toString()}
+                    keyExtractor={(item) => item?.conversationId}
                 />
             </View>
             {/* ============================================ render modal create group */}
