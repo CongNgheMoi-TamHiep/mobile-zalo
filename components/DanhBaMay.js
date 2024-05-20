@@ -39,18 +39,18 @@ function DanhBaMay() {
   const [phonebook, setPhonebook] = useState([]);
   const { socket } = useSocket();
   useEffect(() => {
-    console.log("socket.id");
-    console.log(socket.id);
-    socket.on("receiveFriendRequest", (data) => {
-      getDataTong()
-    });
-    socket.on("cancelFriendRequest", (data) => {
-      getDataTong()
-    });
-    socket.on("acceptFriendRequest", (data) => {
-      getDataTong()
-    });
-  }, [socket.id]);
+    if(socket) { 
+      socket.on("receiveFriendRequest", (data) => {
+        getDataTong()
+      });
+      socket.on("cancelFriendRequest", (data) => {
+        getDataTong()
+      });
+      socket.on("acceptFriendRequest", (data) => {
+        getDataTong()
+      });
+    }
+  }, [socket]);
 
   useEffect(() => { (async()=>{
     await getDataTong();
