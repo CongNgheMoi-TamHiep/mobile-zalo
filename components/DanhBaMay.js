@@ -76,11 +76,19 @@ function DanhBaMay() {
   const fetchContacts = async () => {
     const { status } = await Contacts.requestPermissionsAsync();
     if (status === "granted") {
-      const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name],
-      });
-      
-      handleFormatContacts(data);
+      try {
+        // Lấy danh bạ với các trường đã chỉ định
+        const { data } = await Contacts.getContactsAsync({fields: [Contacts.Fields.PhoneNumbers, Contacts.Fields.Name]});
+        
+        if (data.length > 0) {
+            // Xử lý dữ liệu danh bạ nếu cần
+            handleFormatContacts(data);
+        } else {
+            console.log('Không tìm thấy danh bạ.');
+        }
+    } catch (error) {
+        console.error('Lỗi khi truy xuất danh bạ: ', error);
+    }
     }
   };
   // format danh bạ máy về dạng mảng object {nameDanhBa, number}

@@ -145,9 +145,17 @@ export default function Chat({  }) {
         );
     }
 
-    const formatTimeSendMessage = (timeString) => {
-        const timeFormat = timeString?.slice(11, 16);
-        return timeFormat;
+    const formatTimeSendMessage = (timestamp) => {
+        // console.log(timeString);
+        // const timeFormat = timeString?.slice(11, 16);
+        // return timeFormat;
+        const date = new Date(timestamp);
+        // Thiết lập múi giờ cho Việt Nam, UTC+7
+        const vietnamTime = new Date(date.getTime() + 7 * 60 * 60 * 1000);
+        // Định dạng giờ và phút
+        const hours = vietnamTime.getUTCHours().toString().padStart(2, '0');
+        const minutes = vietnamTime.getUTCMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
     };
     // render lên màn hình các đoạn chat của user
     const renderItem = ({ item }) => {
@@ -248,7 +256,7 @@ export default function Chat({  }) {
                         <TouchableOpacity
                             style={{ width: '50%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
                             onPress={() => {
-                                navigation.navigate("QRCode");
+                                // navigation.navigate("QRCode");
                             }}
                         >
                             <MaterialCommunityIcons name="qrcode-scan" size={24} color="white" />

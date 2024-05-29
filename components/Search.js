@@ -155,6 +155,7 @@ export default function User() {
     if(isFriend ==="accepted"){
       const searchUser = users.find((user) => user.userId === searchUserByPhone._id);
       // console.log("searchUser",searchUser)
+      // tìm kiếm cuộc trò chuyện giữ mình và searchUser
       navigation.navigate('Conversations', { searchUser: searchUser })
     }
     else{

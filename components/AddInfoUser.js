@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   Platform,
   Button,
+  TextInput,
 } from "react-native";
 import { Ionicons, Feather, AntDesign, FontAwesome5 } from "@expo/vector-icons";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import LottieView from "lottie-react-native";
-import { format, parse } from "date-fns";
+import { format, parse, set } from "date-fns";
 import * as ImagePicker from "expo-image-picker";
 import axiosPrivate from "../api/axiosPrivate";
 import { useCurrentUser } from "../App";
@@ -31,6 +32,7 @@ export default function User({ navigation, route }) {
       const user = await axiosPrivate(`/user/${uid}`);
       setUser(user);
       setImage(user.avatar);
+      setNewName(user.name);
       if (user.dateOfBirth) {
         const dateOfBirth = new Date(user.dateOfBirth);
         setSelectedDate(dateOfBirth);
@@ -76,15 +78,15 @@ export default function User({ navigation, route }) {
     formData2.append("file", {
       uri: localUri,
       name: filename,
-      type : 'image/png'
+      type: 'image/png'
     });
     console.log("formData2", formData2._parts[0][1]);
-  
+
     setType(result.uri.substring(result.uri.lastIndexOf(".") + 1));
     setImage(result.uri);
     setFormData(formData2);
   };
-
+  const [newName, setNewName] = React.useState("");
   const HoanThanh = async () => {
     const dateObject = parse(formattedDate, "dd/MM/yyyy", new Date());
     // Chuyển đối tượng Date thành chuỗi định dạng MongoDB
@@ -96,6 +98,7 @@ export default function User({ navigation, route }) {
       dateOfBirth: formattedDateForMongoDB,
       gender: isClickAVT,
       // avatar: image ? image : user?.avatar,
+      name: newName,
     };
     await axiosPrivate.patch(`/user/${user._id}`, UpdateUserData);
     if (formData) {
@@ -109,7 +112,7 @@ export default function User({ navigation, route }) {
     }
     navigation.goBack();
   };
-  return ( 
+  return (
     <View style={styles.container}>
       <View style={styles.ViewTop}>
         <TouchableOpacity
@@ -138,6 +141,13 @@ export default function User({ navigation, route }) {
         </TouchableOpacity>
       </View>
       <View style={styles.GioiTinh}>
+        <Text style={{ fontSize: 17, fontWeight: "500",marginBottom:7 }}>Tên mới</Text>
+        <TextInput
+        value={newName}
+        onChangeText={setNewName}
+          style={{ marginLeft:'10%', width: "80%",marginBottom:7 , height: 35, borderColor: 'gray', borderWidth: 1, borderRadius: 5, paddingLeft: 10, fontSize: 17, fontWeight: "400" }}
+        placeholder="Nhập tên mới"
+        />
         <Text style={{ fontSize: 17, fontWeight: "500" }}>Giới tính</Text>
         <View
           style={{
@@ -270,7 +280,7 @@ const styles = StyleSheet.create({
   },
   GioiTinh: {
     width: "100%",
-    height: 190,
+    height: 310,
     padding: 10,
     backgroundColor: "white",
   },

@@ -55,7 +55,7 @@ const ShowModelProvider = ({ children }) => {
         if (data.caller != currentUser.user.uid) {
           playSound()
           const user = await axiosPrivate(`/user/${data.caller}`);
-  
+
           setCaller(user);
           console.log("data: ", data);
           setDataReviverCall(data);
@@ -64,10 +64,16 @@ const ShowModelProvider = ({ children }) => {
       socket.on("end-call", (data) => {
         //   console.log("end call",data)
         //  setDataReviverCall(null);
+        console.log("endđ");
         setVideoCallModelState(false);
         stopSound()
         setshowReviverCall(false);
       
+      });
+      socket.on("decline-call", (data) => {
+        // console.log("decline call",data)
+        // setDataReviverCall(null);
+        setshowReviverCall(false);
       });
     }
   }, [socket]);
