@@ -8,7 +8,8 @@ import {
   ScrollView,
   SectionList,
   TextInput,
-  FlatList
+  FlatList,
+  Button
 } from "react-native";
 import { Video, ResizeMode } from "expo-av";
 
@@ -29,6 +30,7 @@ import Modal from "react-native-modal";
 import { useCurrentUser } from "../App";
 import axiosPrivate from "../api/axiosPrivate";
 import { useNavigation } from '@react-navigation/native'
+import * as ImagePicker from "expo-image-picker";
 import { set } from "date-fns";
 const OptionChat = ({ route }) => {
   const navigation = useNavigation();
@@ -54,10 +56,10 @@ const OptionChat = ({ route }) => {
     setIsConfirmModalOfAdmin(!isConfirmModalOfAdmin);
   }
   const [listMembers, setListMembers] = useState([]);
-  const fetchData = async() => {
+  const fetchData = async () => {
     const response = await axiosPrivate.get(`/group/${route.params?.conversationInfo.conversationId}`);
     console.log("objectresponseresponse", response)
-    setDataConversation(response);  
+    setDataConversation(response);
     const a = response.members.filter((item) => item._id != currentUser.user.uid);
     setListMembers(a);
     if (route.params.conversationInfo.type === "group") {
@@ -146,12 +148,96 @@ const OptionChat = ({ route }) => {
   // hàm kiểm tra user có phải phó nhóm trong nhóm không
   const checkIsPhoNhom = (userId) => {
     return dataConversation?.deputyList?.some(deputy => deputy?._id === userId);
-}
+  }
+  // modal chọn ảnh đại diện
+  const [isModalVisibleAVT, setModalVisibleAVT] = useState(false);
+  const toggleModalAVT = () => {
+    setModalVisibleAVT(!isModalVisibleAVT);
+  };
+  // chọn ảnh avatar từ thư viện
+  async function HandelChonAVTTuThuVien() {
+    toggleModalAVT();
+    await pickImage();
+  }
+  // hàm chọn ảnh từ thư viện
+  const pickImage = async () => {
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [4, 4],
+      quality: 1,
+    });
+    if (result.cancelled) {
+      return;
+    }
+    let localUri = result.uri;
+    let filename = localUri.split("/").pop();
+    let match = /\.(\w+)$/.exec(filename);
+    let type = match ? `image/${match[1]}` : `image`;
+
+    const formData2 = new FormData();
+    formData2.append("file", {
+      uri: localUri,
+      name: filename,
+      type: "image/png",
+    });
+    if (formData2) {
+      // try {
+      //   const response = await axiosPrivate.patch(`/group/updateInfo/${route.params?.conversationInfo.conversationId}`,{
+      //     image: formData2
+      //   }, {
+      //     headers: {
+      //       "Content-Type": "multipart/form-data",
+      //       Accept: "application/json",
+      //     }
+      //   }
+      // );
+      //   console.log("object",response)
+      // } catch (error) {
+      //   console.error(":", error);
+      // }
+      // await fetchData();
+    }
+  };
+  // xử lý nút chỉnh sửa tên
+  const [isModalVisible, setModalVisible] = useState(false);
+  const [newName, setNewName] = useState("");
+
+  const toggleModal = () => {
+    setModalVisible(!isModalVisible);
+  };
+
+  const handleNameChange = (text) => {
+    setNewName(text);
+  };
+
+  const handleCancel = () => {
+    // Optionally reset newName to its initial state or keep the last input
+    setNewName("");
+    toggleModal();
+  };
+
+  const handleOk = async () => {
+    try {
+        const response = await axiosPrivate.patch(`/group/updateInfo/${route.params?.conversationInfo.conversationId}`,{
+          name: newName
+        }
+      );
+      } catch (error) {
+        console.error(":", error);
+      }
+      await fetchData();
+    toggleModal();
+  };
+
+
   return (
     <View style={styles.container}>
       <ScrollView style={{ width: "100%", height: "100%" }}>
         <View style={styles.ViewTop}>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity onPress={() => {
+            isGroup ? toggleModalAVT() : null;
+          }} activeOpacity={0.8}>
             <Image
               style={{ width: 90, height: 90, borderRadius: 50 }}
               source={{
@@ -161,11 +247,59 @@ const OptionChat = ({ route }) => {
               }}
             />
           </TouchableOpacity>
-
+          <Modal
+            isVisible={isModalVisible}
+            onBackdropPress={toggleModal}
+            style={{ justifyContent: 'center' }}
+            backdropOpacity={0.65}
+            animationIn="slideInUp"
+            animationOut="slideOutDown"
+            backdropTransitionInTiming={600}
+            backdropTransitionOutTiming={600}
+            hideModalContentWhileAnimating={true}
+          >
+            <View style={{
+              backgroundColor: "white",
+              padding: 22,
+              borderRadius: 15,
+              gap: 12,
+              alignItems: 'center',
+            }}>
+              <TextInput
+                style={{
+                  width: '80%',
+                  height: 40,
+                  borderWidth: 1,
+                  padding: 10,
+                  borderRadius: 10,
+                  borderColor: '#D6D9DC'
+                }}
+                autoFocus={true}
+                onChangeText={handleNameChange}
+                value={newName}
+                placeholder="Enter new name"
+              />
+              <View style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around'
+                ,gap: 10
+              }}>
+                <Button title="Cancel" onPress={handleCancel} />
+                <Button title="OK" onPress={handleOk} />
+              </View>
+            </View>
+          </Modal>
           {isGroup ? (
-            <Text style={{ fontSize: 19, fontWeight: 500, marginTop: 7 }}>
-              {dataConversation?.name}
-            </Text>
+            <View style={{ gap: 10, flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 19, fontWeight: 500, marginTop: 7 }}>
+                {dataConversation?.name}
+              </Text>
+              <TouchableOpacity onPress={toggleModal}>
+                <AntDesign name="edit" size={24} color="black" />
+
+              </TouchableOpacity>
+            </View>
+
           ) : (
             <Text style={{ fontSize: 19, fontWeight: 500, marginTop: 7 }}>
               {listMembers[0]?.name}
@@ -477,7 +611,7 @@ const OptionChat = ({ route }) => {
             </TouchableOpacity>
           </View>
         )}
-         {dataConversation?.adminId==currentUser.user.uid || checkIsPhoNhom(currentUser.user.uid)  ? (
+        {dataConversation?.adminId == currentUser.user.uid || checkIsPhoNhom(currentUser.user.uid) ? (
           <View
             style={{
               backgroundColor: "white",
@@ -494,12 +628,12 @@ const OptionChat = ({ route }) => {
               <TouchableOpacity
                 style={styles.contentButton}
                 onPress={() => {
-                  navigation.navigate("BrowseMembers", {dataConversation: dataConversation });
+                  navigation.navigate("BrowseMembers", { dataConversation: dataConversation });
                 }}
               >
                 <Feather name="users" size={22} color="#767A7F" />
                 <Text style={styles.text}>
-                 Duyệt thành viên 
+                  Duyệt thành viên
                 </Text>
               </TouchableOpacity>
             </TouchableOpacity>
@@ -938,6 +1072,34 @@ const OptionChat = ({ route }) => {
         </View>
 
       </Modal>
+      <Modal
+        isVisible={isModalVisibleAVT}
+        onBackdropPress={toggleModalAVT}
+        style={styles.modalAVT}
+        backdropOpacity={0.65}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropTransitionInTiming={600}
+        backdropTransitionOutTiming={600}
+        hideModalContentWhileAnimating={true}
+      >
+        <View style={styles.modalContentAVT}>
+          <Text style={{ fontSize: 17, color: "#03316D", fontWeight: 500 }}>
+            Ảnh đại diện
+          </Text>
+          <TouchableOpacity
+            onPress={HandelChonAVTTuThuVien}
+            style={styles.modalItemAVT}
+          >
+            <Feather name="image" size={24} color="black" />
+            <Text style={styles.modalText}>Chọn ảnh từ thư viện</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.modalItemAVT}>
+            <Feather name="camera" size={24} color="black" />
+            <Text style={styles.modalText}>Chụp ảnh mới</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -1028,6 +1190,23 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#006AF5",
   },
+
+  modalAVT: {
+    justifyContent: "flex-end",
+    margin: 0,
+  },
+  modalContentAVT: {
+    backgroundColor: "white",
+    padding: 22,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    gap: 12,
+  },
+  modalItemAVT: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
+  }
 });
 
 export default OptionChat;

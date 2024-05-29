@@ -182,13 +182,13 @@ export default function User({ navigation }) {
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={{ fontSize: 20, marginBottom: 20 }}>
-              Đổi mật khẩu thành công!
+              Đổi mật khẩu thành công! Tài khoản sẽ đăng xuất để bảo mật
             </Text>
             <Button
               title="OK"
               onPress={() => {
                 setModalVisible(false);
-                navigation.goBack();
+                signOut(auth)
               }}
             />
           </View>

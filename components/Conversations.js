@@ -3,7 +3,6 @@ import React, {
   useLayoutEffect,
   useRef,
   useEffect,
-  useContext,
 } from "react";
 import {
   View,
@@ -19,24 +18,19 @@ import { InputToolbar } from "react-native-gifted-chat";
 import * as ImagePicker from "expo-image-picker";
 import { Video, ResizeMode } from "expo-av";
 import axiosPrivate from "../api/axiosPrivate";
-import { auth } from "../config/firebase";
 import MaterialCommunityIcons from "react-native-vector-icons/MaterialCommunityIcons";
 import {
   AntDesign,
   SimpleLineIcons,
   Ionicons,
-  MaterialIcons,
   Entypo,
   Octicons,
-  FontAwesome
 } from "@expo/vector-icons";
 import combineUserId from "../utils/combineUserId";
-import axios from "axios";
 import { useSocket } from "../context/SocketProvider";
 import { useCurrentUser } from "../App";
 import mime from "mime";
 import Modal from "react-native-modal";
-import { set } from "date-fns";
 import AgoraUIKit from "agora-rn-uikit";
 import * as DocumentPicker from "expo-document-picker";
 import ChatApi from "../api/chatApi";
@@ -63,7 +57,7 @@ export default function Conversations({ route, navigation }) {
 
   // thong tin user tim kiem
   const searchUser = route.params?.searchUser;
-  const conversationInfo = route.params?.conversationInfo;
+  const [conversationInfo, setConversationInfo] = useState(route.params?.conversationInfo);
   
   // kiểm tra xem người  dùng có nhập chữ hay không
   const [isTyping, setIsTyping] = useState(false);
@@ -83,15 +77,17 @@ export default function Conversations({ route, navigation }) {
   }, []);
 
   useEffect(() => {
-    const convId =
-      conversationInfo?.conversationId ||
-      combineUserId(currentUser.user.uid, searchUser?._id);
-    console.log("conversationInfo:")
-    console.log(conversationInfo)
-
-    console.log("convId: ");
-    console.log(convId);
-    socket.emit("joinRoom", convId);
+    (async() => { 
+      let convId = conversationInfo?.conversationId; 
+      if(searchUser?.userId) {
+          convId = combineUserId(currentUser.user.uid, searchUser.userId);
+          const userConversations = await axiosPrivate(`/userConversations/${currentUser.user.uid}`);
+          const convInfo = userConversations.conversations.find((conversation) => conversation.conversationId === convId);
+          convInfo.conversationId = convId;
+          setConversationInfo(convInfo);
+      }
+      socket.emit("joinRoom", convId);
+    })()
   }, []);
 
   useEffect(() => {
@@ -103,6 +99,7 @@ export default function Conversations({ route, navigation }) {
       socket.on("deleteMessage", (chatId) => {
         setDeletedChatId(chatId);
       });
+    
     }
   }, [socket]);
 
@@ -164,9 +161,6 @@ export default function Conversations({ route, navigation }) {
   }, [chatReceived]);
 
   useEffect(() => {
-    const conversationInfo = route.params?.conversationInfo;
-    console.log("conversation infoooooooo ==========================", conversationInfo);
-    // console.log('conversation infoooooooo ==========================')
     const conversationId = conversationInfo?.conversationId;
     (async () => {
       if (conversationId) {
@@ -197,7 +191,7 @@ export default function Conversations({ route, navigation }) {
         setMessages(formattedMessages.reverse());
       }
     })();
-  }, []);
+  }, [conversationInfo]);
 
   useLayoutEffect(() => {
     const originalTitle = `${searchUser?.name || conversationInfo?.name || conversationInfo?.user.name
@@ -474,7 +468,7 @@ export default function Conversations({ route, navigation }) {
   const handleImageLongPress = (context, message) => {
     console.log("Bạn đã nhấn và giữ vào hình ảnh:", message);
     setSelectedMessage(message);
-    setModalImageVisible(true);
+    // setModalImageVisible(true);
   };
 
   // custom header
@@ -1065,6 +1059,14 @@ export default function Conversations({ route, navigation }) {
       socket.on("end-call", ({ channel }) => {
         setVideoCall(false);
       });
+      socket.on("decline-call", (data) => {
+        if(data.channel===conversationInfo?.conversationId)
+        setVideoCall(false);
+
+        // console.log("decline call",data)
+        // setDataReviverCall(null);
+        
+      });
     }
   }, [socket]);
   const connectionData = {
@@ -1237,8 +1239,8 @@ export default function Conversations({ route, navigation }) {
                     conversationId: conversationInfo?.conversationId,
                   });
                   setModalVisible(false);
-                  setModalImageVisible(false);
-                  setModalVideoVisible(false);
+                  // setModalImageVisible(false);
+                  // setModalVideoVisible(false);
                 }}
               >
                 <Image

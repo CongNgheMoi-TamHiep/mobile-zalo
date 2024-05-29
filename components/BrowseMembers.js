@@ -23,6 +23,9 @@ export default function ViewMember({ navigation, route }) {
             memberModeration:   !isEnabled
         });
         console.log("object",response)
+        if(dataConversation?.waitingList.length>0){
+           TuchoiAll()
+        }
       } catch (error) {
         console.error(":", error);
       }
@@ -51,16 +54,30 @@ export default function ViewMember({ navigation, route }) {
       });
     }
         fetchDataWaitList()
-        toggleModal()
     }
         catch (error) {
             console.error("Lỗi khi chấp nhận", error);
           }
   }
+  async function TuChoi(id){
+    console.log("aaaaaa",dataConversation._id);
+    try {
+      await axiosPrivate.delete(`/group/removeMember/${dataConversation._id}`,{
+        params:{ userId:id}
+    })
+        fetchDataWaitList()
+    }
+        catch (error) {
+            console.error("Lỗi khi từ chối", error);
+          }
+  }
   async function TuchoiAll(){
     try {
       
-        // const res = await axiosPrivate.post(`/group/rejectAllMember/${dataConversation._id}`);
+        for (const id of dataConversation?.waitingList) {
+          await axiosPrivate.delete(`/group/removeMember/${dataConversation._id}`,{
+            params:{ userId:id._id}
+        })}
         toggleModal()
         fetchDataWaitList()
     }
@@ -122,7 +139,11 @@ export default function ViewMember({ navigation, route }) {
                         </Text>
                        </Text>
                        <View style={{flexDirection:'row',gap:15}}>
-                            <TouchableOpacity style={{width: 110,justifyContent:'center',alignItems:'center',height:34,borderRadius:15,backgroundColor:'#E9EBED'}}>
+                            <TouchableOpacity
+                            onPress={()=>{
+                              TuChoi(item._id)
+                          }}
+                            style={{width: 110,justifyContent:'center',alignItems:'center',height:34,borderRadius:15,backgroundColor:'#E9EBED'}}>
                                 <Text style={{color:'#141415',fontWeight:500,fontSize:18}}>Từ chối</Text>
                             </TouchableOpacity>
                             <TouchableOpacity

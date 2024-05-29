@@ -120,7 +120,9 @@ export default function ViewMember({ navigation, route }) {
                     <TouchableOpacity
                         style={{ width: '50%', height: '100%', justifyContent: 'center', alignItems: 'center' }}
                         onPress={() => {
-                            navigation.navigate('AddMembers');
+                            navigation.navigate('AddMembers',{
+                                dataConversation:dataConversation
+                            });
                         }}
                     >
                         <AntDesign name="addusergroup" size={32} color="white" />

@@ -62,7 +62,7 @@ export default function SwiperComponent({ navigation }) {
     <Text>
       aa
     </Text>
-     <View style={styles.barcodebox}>
+     {/* <View style={styles.barcodebox}>
         <TouchableOpacity
           style={{ position: "absolute", top: 14, left: 20, zIndex: 1 }}
           onPress={() => {
@@ -87,7 +87,7 @@ export default function SwiperComponent({ navigation }) {
             color="tomato"
           />
         )}
-      </View>
+      </View> */}
     </View>
   );
 }
